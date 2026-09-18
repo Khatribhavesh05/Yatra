@@ -1,6 +1,6 @@
-# ChargeEase - Government EV Fleet Intelligence Platform
+# Yatra - Government EV Fleet Intelligence Platform
 
-Welcome to the backend repository for ChargeEase, a comprehensive EV Fleet Intelligence Platform designed for government organizations. This platform provides real-time monitoring, intelligent alerting, department-level data isolation, and robust role-based access control for managing large-scale electric vehicle fleets.
+Welcome to the backend repository for Yatra, a comprehensive EV Fleet Intelligence Platform designed for government organizations. This platform provides real-time monitoring, intelligent alerting, department-level data isolation, and robust role-based access control for managing large-scale electric vehicle fleets.
 
 ## Architecture
 
