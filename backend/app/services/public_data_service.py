@@ -13,11 +13,13 @@ from app.models.stop import Stop
 from app.models.route_stop import RouteStop
 from app.models.vehicle_route import VehicleRoute
 from app.models.help_contact import HelpContact
+from app.models.grievance import Grievance
 from app.schemas.vehicle import VehiclePublicResponse
 from app.schemas.charging_center import ChargingCenterPublicResponse, ChargingCenterDetailResponse
 from app.schemas.city import CityResponse, StateResponse
 from app.schemas.route import RouteResponse, RouteDetailResponse, StopResponse, StopDetailResponse
 from app.schemas.help_contact import HelpContactResponse
+from app.schemas.grievance import GrievanceResponse
 
 def _round_coordinate(value: float, decimals: int = 3) -> float:
     return round(value, decimals)
@@ -242,4 +244,18 @@ async def register_public_charging_center(db: AsyncSession, data) -> ChargingCen
     await db.commit()
     await db.refresh(center)
     return ChargingCenterPublicResponse.model_validate(center)
+
+async def create_public_grievance(db: AsyncSession, data) -> GrievanceResponse:
+    grievance = Grievance(
+        category=data.category,
+        description=data.description,
+        city=data.city,
+        reporter_name=data.reporter_name,
+        reporter_phone=data.reporter_phone,
+        reporter_email=data.reporter_email,
+    )
+    db.add(grievance)
+    await db.commit()
+    await db.refresh(grievance)
+    return GrievanceResponse.model_validate(grievance)
 

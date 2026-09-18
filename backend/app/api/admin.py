@@ -8,10 +8,12 @@ from app.core.database import get_db
 from app.core.dependencies import require_roles
 from app.models.user import User, UserRole
 from app.models.audit_log import AuditLog
+from app.models.grievance import Grievance
 from app.schemas.department import DepartmentCreate, DepartmentUpdate, DepartmentResponse
 from app.schemas.user import UserCreate, UserResponse, UserStatusUpdate
 from app.schemas.device import DeviceCreate, DeviceResponse
 from app.schemas.audit_log import AuditLogResponse
+from app.schemas.grievance import GrievanceResponse
 from app.services.department_service import create_department, get_departments, update_department
 from app.services.user_service import create_user, get_users, update_user_status
 from app.services.device_service import create_device, get_devices
@@ -168,3 +170,19 @@ async def list_audit_logs(
         )
         for log in logs
     ]
+
+
+# --- Grievances ---
+
+@router.get("/grievances", response_model=list[GrievanceResponse])
+async def list_grievances(
+    limit: int = Query(50, le=200),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_roles(UserRole.PLATFORM_ADMIN, UserRole.DEPARTMENT_ADMIN)),
+):
+    result = await db.execute(
+        select(Grievance).order_by(Grievance.created_at.desc()).limit(limit).offset(offset)
+    )
+    grievances = result.scalars().all()
+    return [GrievanceResponse.model_validate(g) for g in grievances]

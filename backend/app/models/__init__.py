@@ -17,6 +17,7 @@ from app.models.stop import Stop
 from app.models.route_stop import RouteStop
 from app.models.vehicle_route import VehicleRoute
 from app.models.help_contact import HelpContact
+from app.models.grievance import Grievance
 
 __all__ = [
     "Base",
@@ -49,5 +50,6 @@ __all__ = [
     "Stop",
     "RouteStop",
     "VehicleRoute",
-    "HelpContact"
+    "HelpContact",
+    "Grievance",
 ]

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 from typing import List, Optional
@@ -9,6 +9,7 @@ from app.schemas.charging_center import ChargingCenterPublicResponse, ChargingCe
 from app.schemas.city import CityResponse, StateResponse
 from app.schemas.route import RouteResponse, RouteDetailResponse, StopResponse, StopDetailResponse
 from app.schemas.help_contact import HelpContactResponse
+from app.schemas.grievance import GrievanceCreate, GrievanceResponse
 
 from app.services import public_data_service as pds
 
@@ -107,4 +108,9 @@ async def public_register_charging_center(
     else:
         create_data = ChargingCenterCreate(**body.model_dump())
     return await pds.register_public_charging_center(db, create_data)
+
+@router.post("/grievances", response_model=GrievanceResponse, status_code=status.HTTP_201_CREATED)
+async def public_submit_grievance(body: GrievanceCreate, db: AsyncSession = Depends(get_db)):
+    """Public endpoint. No authentication required. Citizens may submit anonymously."""
+    return await pds.create_public_grievance(db, body)
 
