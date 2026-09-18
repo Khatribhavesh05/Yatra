@@ -1,0 +1,7 @@
+# Ignore OS generated files in assets
+.DS_Store
+.DS_Store?
+._*
+ehthumbs.db
+Thumbs.db
+desktop.ini

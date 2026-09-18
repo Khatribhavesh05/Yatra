@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-urja-primary: #2F8F3A;
+  --color-urja-dark: #176B2A;
+  --color-urja-deep: #0F5420;
+  --color-urja-light: #EAF6E8;
+  --color-urja-pale: #F4FAF2;
+  --color-urja-green-border: #CFE7CC;
+
+  --color-urja-bg: #F7FAF6;
+  --color-urja-surface: #FFFFFF;
+  --color-urja-text: #1D2921;
+  --color-urja-text-secondary: #4F5D54;
+  --color-urja-text-muted: #737F78;
+  --color-urja-border: #DDE6DE;
+
+  --color-urja-success: #2F8F3A;
+  --color-urja-warning: #C68A16;
+  --color-urja-danger: #C44536;
+  --color-urja-info: #3276B1;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-urja-bg);
+    color: var(--color-urja-text);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-urja-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-urja-text-muted); }
+
+/* MapLibre GL overrides */
+.maplibregl-map { font-family: inherit; }
+.maplibregl-ctrl-attrib { font-size: 10px !important; }
+
