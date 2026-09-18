@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCity } from '../../context/CityContext';
 import { useAuth } from '../../context/AuthContext';
+import { YatraLogo } from '../common/YatraLogo';
 
 export const Header: React.FC = () => {
   const location = useLocation();
@@ -31,13 +32,10 @@ export const Header: React.FC = () => {
       <div className="flex justify-between items-center max-w-container-max-width mx-auto px-gutter h-20">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2 group py-1">
-          <img
-            src="/urja-logo.svg"
-            alt="URJA Logo"
-            className="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = '/urja-logo.png';
-            }}
+          <YatraLogo
+            variant="full"
+            height={36}
+            className="transition-transform duration-200 group-hover:scale-105"
           />
         </Link>
 

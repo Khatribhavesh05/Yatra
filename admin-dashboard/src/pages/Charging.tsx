@@ -1,80 +1,176 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Info, MapPin, Zap } from 'lucide-react';
 import { getChargingCenters } from '../api/charging';
+import { getVehicles } from '../api/vehicles';
+import { getDepartments } from '../api/departments';
 import { QUERY_KEYS } from '../utils/constants';
+import { VehicleWithTelemetryResponse, DepartmentResponse } from '../types/api';
+import { formatRange } from '../utils/formatters';
+import PageHeader from '../components/common/PageHeader';
+import StatusBadge from '../components/common/StatusBadge';
+import BatteryIndicator from '../components/common/BatteryIndicator';
+import { EmptyState, ErrorState } from '../components/common/FeedbackStates';
 
 export default function Charging() {
-  const { data: centers, isLoading, error } = useQuery({
+  const { data: centers, isLoading: isLoadingCenters, error: errorCenters, refetch: refetchCenters } = useQuery({
     queryKey: [QUERY_KEYS.CHARGING_CENTERS],
     queryFn: getChargingCenters,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-urja-text-secondary">Loading charging centers...</div>
-      </div>
-    );
-  }
+  const { data: vehiclesData, isLoading: isLoadingVehicles } = useQuery({
+    queryKey: QUERY_KEYS.VEHICLES,
+    queryFn: () => getVehicles(500, 0),
+  });
 
-  if (error) {
+  const { data: deptsData } = useQuery({
+    queryKey: QUERY_KEYS.DEPARTMENTS,
+    queryFn: () => getDepartments(200, 0),
+  });
+
+  const vehicles = vehiclesData ?? [];
+  const departments = deptsData ?? [];
+  const chargingVehicles = vehicles.filter((v: VehicleWithTelemetryResponse) => v.charging);
+
+  const isLoading = isLoadingCenters || isLoadingVehicles;
+
+  if (errorCenters) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <div className="text-urja-danger">Failed to load charging centers</div>
-      </div>
+      <ErrorState
+        title="Failed to Load Charging Operations"
+        message="Could not load charging station infrastructure or live charging session status."
+        onRetry={refetchCenters}
+      />
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-urja-text">Charging Infrastructure</h1>
-      </div>
+      <PageHeader
+        title="Charging Infrastructure & Operations Center"
+        subtitle="Real-time monitoring of active EV charging sessions and public station infrastructure."
+        badgeText="CHARGING CONTROL"
+      />
 
-      <div className="flex items-center gap-3 rounded-lg bg-urja-pale p-4 border border-urja-green-border/50 text-urja-text-secondary">
-        <Info className="h-5 w-5 text-urja-success shrink-0" />
-        <p>Showing publicly visible charging centers. Admin management API coming soon.</p>
-      </div>
-
-      {!centers || centers.length === 0 ? (
-        <div className="rounded-2xl border border-urja-border bg-urja-surface/50 p-12 text-center">
-          <p className="text-urja-text-secondary">No charging centers available.</p>
+      {/* Section 1: Active Charging Sessions */}
+      <div className="yatra-card p-5 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Active Vehicle Charging Sessions
+            </h3>
+            <p className="text-xs text-slate-500">EVs currently connected and drawing power across stations</p>
+          </div>
+          <StatusBadge status="charging" label={`${chargingVehicles.length} Charging Active`} />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {centers.map((center: any) => (
-            <div key={center.id} className="rounded-2xl border border-urja-border bg-urja-surface p-6 flex flex-col gap-4">
-              <div>
-                <h3 className="text-lg font-semibold text-urja-text">{center.name}</h3>
-              </div>
-              
-              <div className="flex items-start gap-2 text-urja-text-secondary">
-                <MapPin className="h-4 w-4 mt-1 shrink-0" />
-                <div className="text-sm">
-                  <div>{center.location.lat.toFixed(4)}, {center.location.lng.toFixed(4)}</div>
-                </div>
-              </div>
 
-              <div className="flex items-start gap-2 text-urja-text-secondary">
-                <Zap className="h-4 w-4 mt-1 shrink-0" />
-                <div className="text-sm flex flex-col gap-2 w-full">
-                  <div className="text-urja-text-secondary font-medium">Power: {center.total_capacity_kw || 150} kW</div>
-                  {center.supported_connectors && (
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {Object.entries(center.supported_connectors).map(([type, count]) => (
-                        <span key={type} className="inline-flex items-center px-2 py-1 rounded bg-urja-pale text-xs font-medium text-urja-text-secondary border border-urja-green-border">
-                          {type} ×{count as number}
+        {chargingVehicles.length === 0 ? (
+          <EmptyState
+            title="No Active Charging Sessions"
+            description="No fleet vehicles are actively connected to chargers at this time."
+            icon="ev_station"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {chargingVehicles.map((vehicle: VehicleWithTelemetryResponse) => {
+              const dept = departments.find((d: DepartmentResponse) => d.id === vehicle.department_id);
+              return (
+                <div
+                  key={vehicle.id}
+                  className="p-4 bg-slate-50 border border-blue-200 rounded-xl space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-slate-900">{vehicle.vehicle_code}</h4>
+                      <p className="text-xs text-slate-500">{dept?.name || 'Department'}</p>
+                    </div>
+                    <StatusBadge status="charging" size="sm" />
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-slate-200/80">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-semibold">State of Charge</span>
+                      <span className="font-mono font-bold text-blue-700">{vehicle.soc_pct ?? 0}%</span>
+                    </div>
+                    <BatteryIndicator soc={vehicle.soc_pct} isCharging={true} size="md" />
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
+                      <span>Est. Range: {formatRange(vehicle.estimated_range_km)}</span>
+                      <span className="font-semibold uppercase">{vehicle.vehicle_type}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Section 2: Charging Station Infrastructure Grid */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              State Charging Center Infrastructure Network
+            </h3>
+            <p className="text-xs text-slate-500">Public and depot charging locations supporting Rajasthan EV fleet</p>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="py-12 text-center text-xs font-semibold text-slate-500">
+            Loading charging station telemetry...
+          </div>
+        ) : !centers || centers.length === 0 ? (
+          <EmptyState
+            title="No Charging Stations Configured"
+            description="No charging stations recorded in the central infrastructure directory."
+            icon="electrical_services"
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {centers.map((center: any) => {
+              const lat = center.latitude ?? center.location?.lat ?? 0;
+              const lng = center.longitude ?? center.location?.lng ?? 0;
+              const power = center.power_kw ?? center.total_capacity_kw ?? 150;
+              const connectors = center.connectors ?? center.supported_connectors ?? {};
+
+              return (
+                <div key={center.id} className="yatra-card p-5 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">{center.name}</h4>
+                      <p className="text-xs text-slate-500 font-mono mt-0.5">
+                        {lat.toFixed(4)}, {lng.toFixed(4)}
+                      </p>
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200">
+                      OPERATIONAL
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-semibold">Capacity Rating</span>
+                    <span className="font-extrabold text-slate-900 font-mono">{power} kW</span>
+                  </div>
+
+                  {connectors && Object.keys(connectors).length > 0 && (
+                    <div className="pt-2 flex flex-wrap gap-1.5">
+                      {Object.entries(connectors).map(([type, count]) => (
+                        <span
+                          key={type}
+                          className="px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded text-[11px] font-semibold"
+                        >
+                          {type.toUpperCase()}: {count as number} guns
                         </span>
                       ))}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

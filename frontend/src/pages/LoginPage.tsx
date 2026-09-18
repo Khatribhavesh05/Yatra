@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
+import { YatraLogo } from '../components/common/YatraLogo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,20 +45,13 @@ export const LoginPage: React.FC = () => {
         {/* Brand Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-block mb-3">
-            <img
-              src="/urja-logo.svg"
-              alt="URJA Logo"
-              className="h-12 w-auto mx-auto object-contain"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/urja-logo.png';
-              }}
-            />
+            <YatraLogo height={44} />
           </Link>
-          <h1 className="font-display-lg text-2xl font-bold text-on-background">
+          <h1 className="font-display-lg text-2xl font-bold text-on-background mt-2">
             Operator & Official Access
           </h1>
           <p className="font-body-md text-xs text-on-surface-variant mt-1">
-            Authorized portal for URJA EV Charging Station Operators, Dispatchers, and Municipal Admins.
+            Authorized portal for Yatra EV Charging Station Operators, Dispatchers, and Municipal Admins.
           </p>
         </div>
 

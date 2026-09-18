@@ -7,7 +7,7 @@ export const ResourcesPage: React.FC = () => {
   const faqs = [
     {
       q: 'Do I need to create an account or log in to track city electric buses?',
-      a: 'No. FleetIQ / URJA is built on an open-access public service model. All citizens, commuters, and tourists can view real-time electric bus movements, stop arrivals, and live speeds directly on the map without any registration or login.',
+      a: 'No. Yatra (यात्रा) is built on an open-access public service model. All citizens, commuters, and tourists can view real-time electric bus movements, stop arrivals, and live speeds directly on the map without any registration or login.',
     },
     {
       q: 'How accurate is the live bus GPS streaming?',
@@ -23,7 +23,7 @@ export const ResourcesPage: React.FC = () => {
     },
     {
       q: 'How does the platform protect commuter privacy?',
-      a: 'FleetIQ adheres strictly to Government of India data privacy guidelines. No citizen location history, facial recognition, or personal identifiers are stored. All vehicle data is sanitized to show only public route, speed, and status metrics.',
+      a: 'Yatra adheres strictly to Government of India data privacy guidelines. No citizen location history, facial recognition, or personal identifiers are stored. All vehicle data is sanitized to show only public route, speed, and status metrics.',
     },
   ];
 
@@ -177,7 +177,7 @@ export const ResourcesPage: React.FC = () => {
               to="/about"
               className="bg-primary-container text-white px-6 py-3 rounded-lg text-xs font-label-bold hover:bg-opacity-90 transition-colors border border-white/20"
             >
-              Learn More About URJA
+              Learn More About Yatra
             </Link>
           </div>
         </div>

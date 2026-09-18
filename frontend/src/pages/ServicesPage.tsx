@@ -105,7 +105,7 @@ export const ServicesPage: React.FC = () => {
             title="About Platform & Governance"
             category="Institutional Trust"
             categoryIcon="account_balance"
-            description="Learn about the URJA / FleetIQ national initiative, data protection standards, commuter privacy safeguards, and institutional governance."
+            description="Learn about the Yatra national mobility initiative, data protection standards, commuter privacy safeguards, and institutional governance."
             link="/about"
             linkText="Read Platform Mission"
           />

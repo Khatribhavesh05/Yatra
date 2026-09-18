@@ -25,7 +25,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-urja-bg">
+      <div className="flex h-screen items-center justify-center bg-yatra-bg">
         <LoadingSpinner message="Initializing command console..." size="md" />
       </div>
     );

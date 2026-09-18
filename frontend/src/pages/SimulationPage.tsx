@@ -180,7 +180,7 @@ export const SimulationPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">science</span>
           <h1 className="font-headline-sm text-base font-bold text-on-background">
-            URJA Fleet Simulation
+            Yatra Fleet Simulation
           </h1>
           <span className="text-[10px] font-label-bold uppercase tracking-wider text-on-surface-variant bg-surface-container-low px-2 py-0.5 rounded">
             Digital Twin

@@ -1,261 +1,255 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Map, Search, X, Activity, Zap, Car, Filter, Navigation2 } from 'lucide-react';
 import { getVehicles } from '../api/vehicles';
 import { getDepartments } from '../api/departments';
 import { QUERY_KEYS } from '../utils/constants';
 import { VehicleWithTelemetryResponse, DepartmentResponse } from '../types/api';
-// import { useVehicleStore } from '../hooks/useVehicleStore';
-import { formatRelativeTime, formatBattery, formatSpeed, formatRange, getVehicleStatus } from '../utils/formatters';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { formatRelativeTime, formatRange, getVehicleStatus } from '../utils/formatters';
 import FleetMap from '../components/maps/FleetMap';
+import StatusBadge from '../components/common/StatusBadge';
+import BatteryIndicator from '../components/common/BatteryIndicator';
+import { SearchInput, FilterSelect } from '../components/common/FilterControls';
 
 export default function LiveFleet() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [deptFilter, setDeptFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [batteryFilter, setBatteryFilter] = useState('all');
+  const [deptFilter, setDeptFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [liveUpdates, setLiveUpdates] = useState<Record<string, Partial<VehicleWithTelemetryResponse>>>({});
+
+  const { subscribe } = useWebSocket();
 
   const { data: vehiclesData, isLoading: isLoadingVehicles } = useQuery({
     queryKey: QUERY_KEYS.VEHICLES,
-    queryFn: () => getVehicles(500, 0)
+    queryFn: () => getVehicles(500, 0),
   });
 
   const { data: deptsData } = useQuery({
     queryKey: QUERY_KEYS.DEPARTMENTS,
-    queryFn: () => getDepartments(200, 0)
+    queryFn: () => getDepartments(200, 0),
   });
 
-  // Mock integration for useVehicleStore (assume hook returns latest data overriding initial)
-  // const { latestVehicles } = useVehicleStore();
-  
-  const vehicles = vehiclesData ?? [];
+  // Wire real-time WebSocket telemetry stream
+  useEffect(() => {
+    const unsubscribe = subscribe((msg) => {
+      if (msg.type === 'telemetry_update' && msg.data) {
+        const telemetry = msg.data as any;
+        const vehicleId = telemetry.vehicle_id;
+        if (vehicleId) {
+          setLiveUpdates((prev) => ({
+            ...prev,
+            [vehicleId]: {
+              latitude: telemetry.latitude,
+              longitude: telemetry.longitude,
+              speed_kph: telemetry.speed_kph,
+              soc_pct: telemetry.soc_pct,
+              heading_deg: telemetry.heading_deg,
+              charging: telemetry.charging,
+              connectivity_status: telemetry.connectivity_status || 'online',
+              last_seen: telemetry.observed_at || new Date().toISOString(),
+            },
+          }));
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [subscribe]);
+
+  const rawVehicles = vehiclesData ?? [];
   const departments = deptsData ?? [];
 
-  const getStatus = (v: VehicleWithTelemetryResponse) => {
-    if (v.connectivity_status === 'offline' || !v.connectivity_status) return 'offline';
-    if (v.charging) return 'charging';
-    if (v.speed_kph && v.speed_kph > 0) return 'active';
-    return 'idle';
-  };
+  // Merge REST snapshot with real-time WebSocket updates
+  const vehicles: VehicleWithTelemetryResponse[] = rawVehicles.map((v) => {
+    const update = liveUpdates[v.id];
+    return update ? { ...v, ...update } : v;
+  });
 
   const filteredVehicles = vehicles.filter((v: VehicleWithTelemetryResponse) => {
     if (searchTerm && !v.vehicle_code.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    if (deptFilter !== 'all' && v.department_id !== deptFilter) return false;
-    
-    const status = getStatus(v);
-    if (statusFilter !== 'all' && status !== statusFilter) return false;
-    
-    if (batteryFilter !== 'all' && v.soc_pct !== undefined && v.soc_pct !== null) {
-      if (batteryFilter === '<20' && v.soc_pct >= 20) return false;
-      if (batteryFilter === '20-50' && (v.soc_pct < 20 || v.soc_pct >= 50)) return false;
-      if (batteryFilter === '50-80' && (v.soc_pct < 50 || v.soc_pct >= 80)) return false;
-      if (batteryFilter === '>80' && v.soc_pct < 80) return false;
-    }
+    if (deptFilter && v.department_id !== deptFilter) return false;
+
+    const st = getVehicleStatus(v);
+    if (statusFilter && st !== statusFilter) return false;
+
     return true;
   });
 
   const selectedVehicle = vehicles.find((v: VehicleWithTelemetryResponse) => v.id === selectedVehicleId);
   const selectedDept = departments.find((d: DepartmentResponse) => d.id === selectedVehicle?.department_id);
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'active': return 'bg-emerald-500';
-      case 'charging': return 'bg-blue-500';
-      case 'offline': return 'bg-slate-600';
-      default: return 'bg-yellow-500'; // idle
-    }
-  };
-
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="bg-urja-surface border-b border-urja-border p-4 flex items-center justify-between shrink-0">
+    <div className="flex flex-col h-[calc(100vh-6rem)] -m-4 sm:-m-6 overflow-hidden bg-slate-900">
+      {/* Top Command Bar */}
+      <div className="bg-slate-950 border-b border-slate-800 px-6 py-3 flex items-center justify-between z-20">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-urja-text">Live Fleet Monitoring</h1>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-urja-danger/10 border border-urja-danger/20">
-            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-            <span className="text-xs font-semibold text-urja-danger uppercase tracking-wider">Live</span>
+          <div className="p-2 bg-teal-500/10 border border-teal-500/20 text-teal-400 rounded-lg">
+            <span className="material-symbols-outlined text-xl">map</span>
           </div>
+          <div>
+            <h1 className="text-sm font-bold text-white tracking-tight">Live Fleet Command Map</h1>
+            <p className="text-[11px] text-slate-400">Rajasthan Real-Time EV Telemetry & Position Tracking</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 text-xs">
+          <span className="flex items-center gap-2 px-3 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-300 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
+            Showing {filteredVehicles.length} of {vehicles.length} EVs
+          </span>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-80 bg-urja-bg border-r border-urja-border flex flex-col z-10 shrink-0 shadow-xl">
-          <div className="p-4 space-y-4 border-b border-urja-border">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-urja-text-muted" />
-              <input
-                type="text"
-                placeholder="Search vehicles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-urja-surface border border-urja-border rounded-lg pl-9 pr-4 py-2 text-sm text-urja-text placeholder-slate-500 focus:outline-none focus:border-urja-primary"
-              />
-            </div>
-            
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="w-full bg-urja-surface border border-urja-border rounded-lg px-3 py-2 text-sm text-urja-text focus:outline-none focus:border-urja-primary"
-            >
-              <option value="all">All Departments</option>
-              {departments.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
+      {/* Main Split Interface */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Left Vehicle Control Panel */}
+        <div className="w-80 sm:w-88 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shrink-0 shadow-2xl">
+          <div className="p-4 space-y-3 border-b border-slate-800 bg-slate-950/40">
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Search code or ID..."
+            />
 
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {['all', 'active', 'charging', 'idle', 'offline'].map(status => (
-                <button
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-colors ${
-                    statusFilter === status 
-                      ? 'bg-slate-700 text-urja-text' 
-                      : 'bg-urja-surface text-urja-text-secondary border border-urja-border hover:bg-urja-pale'
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-            <div className="text-xs font-medium text-urja-text-muted pt-1">
-              Showing {filteredVehicles.length} vehicles
+            <div className="grid grid-cols-2 gap-2">
+              <FilterSelect
+                value={deptFilter}
+                onChange={setDeptFilter}
+                placeholder="All Departments"
+                options={departments.map((d) => ({ value: d.id, label: d.name }))}
+              />
+              <FilterSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                placeholder="All Statuses"
+                options={[
+                  { value: 'active', label: 'Active' },
+                  { value: 'charging', label: 'Charging' },
+                  { value: 'idle', label: 'Idle' },
+                  { value: 'offline', label: 'Offline' },
+                ]}
+              />
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          {/* Vehicle List */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
             {isLoadingVehicles ? (
-              <div className="p-4 text-center text-sm text-urja-text-muted">Loading fleet...</div>
+              <div className="p-6 text-center text-xs text-slate-400 font-medium">
+                Loading live fleet positions...
+              </div>
             ) : filteredVehicles.length > 0 ? (
-              filteredVehicles.map(vehicle => {
-                const status = getStatus(vehicle);
-                const dept = departments.find(d => d.id === vehicle.department_id);
+              filteredVehicles.map((vehicle) => {
+                const st = getVehicleStatus(vehicle);
+                const dept = departments.find((d) => d.id === vehicle.department_id);
                 const isSelected = selectedVehicleId === vehicle.id;
-                
+
                 return (
-                  <div 
+                  <div
                     key={vehicle.id}
                     onClick={() => setSelectedVehicleId(vehicle.id)}
-                    className={`relative p-3 rounded-2xl border transition-all cursor-pointer overflow-hidden ${
-                      isSelected 
-                        ? 'bg-urja-pale border-slate-600 shadow-lg' 
-                        : 'bg-urja-surface border-urja-border hover:border-urja-green-border hover:bg-urja-pale'
+                    className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-slate-800 border-teal-500 shadow-lg'
+                        : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50'
                     }`}
                   >
-                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${getStatusColor(status)}`}></div>
-                    <div className="pl-2">
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="font-semibold text-urja-text text-sm">{vehicle.vehicle_code}</div>
-                        <span className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${
-                          status === 'active' ? 'bg-emerald-500/20 text-urja-primary' :
-                          status === 'charging' ? 'bg-blue-500/20 text-blue-400' :
-                          status === 'offline' ? 'bg-slate-700 text-urja-text-secondary' :
-                          'bg-yellow-500/20 text-urja-warning'
-                        }`}>
-                          {status}
-                        </span>
-                      </div>
-                      <div className="text-xs text-urja-text-secondary mb-2 truncate">{dept?.name || 'Unknown Dept'}</div>
-                      <div className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <Zap className="w-3.5 h-3.5 text-urja-text-muted" />
-                          <span className={vehicle.soc_pct && vehicle.soc_pct < 20 ? 'text-urja-danger' : 'text-urja-text-secondary'}>
-                            {vehicle.soc_pct ?? '--'}%
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Activity className="w-3.5 h-3.5 text-urja-text-muted" />
-                          <span className="text-urja-text-secondary">{vehicle.speed_kph ? Math.round(vehicle.speed_kph) : 0} km/h</span>
-                        </div>
-                      </div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-bold text-white text-xs tracking-wider">
+                        {vehicle.vehicle_code}
+                      </span>
+                      <StatusBadge status={st} size="sm" />
+                    </div>
+
+                    <div className="text-[11px] text-slate-400 truncate mb-2">
+                      {dept?.name || 'Unassigned Dept'}
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-800/60">
+                      <BatteryIndicator soc={vehicle.soc_pct} isCharging={vehicle.charging} size="sm" />
+                      <span className="font-mono font-bold text-slate-300 text-[11px]">
+                        {vehicle.speed_kph ? `${Math.round(vehicle.speed_kph)} km/h` : '0 km/h'}
+                      </span>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="p-8 text-center text-sm text-urja-text-muted">
-                No vehicles match filters.
+              <div className="p-8 text-center text-xs text-slate-500">
+                No vehicles match current filters.
               </div>
             )}
           </div>
         </div>
 
-        {/* Map Area */}
-        <div className="flex-1 relative bg-urja-bg flex items-center justify-center">
-          <div className="absolute inset-0 z-0">
-            <FleetMap 
-              vehicles={filteredVehicles} 
-              selectedVehicleId={selectedVehicleId}
-              onSelectVehicle={setSelectedVehicleId} 
-            />
-          </div>
+        {/* Center Operational Map Area */}
+        <div className="flex-1 relative bg-slate-950">
+          <FleetMap
+            vehicles={filteredVehicles}
+            selectedVehicleId={selectedVehicleId}
+            onSelectVehicle={setSelectedVehicleId}
+          />
 
-          {/* Selected Vehicle Overlay */}
+          {/* Selected Vehicle Operational Dossier Overlay */}
           {selectedVehicle && (
-            <div className="absolute top-4 right-4 w-80 bg-urja-surface/95 backdrop-blur-md border border-urja-green-border rounded-2xl shadow-2xl z-20 overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-urja-border flex justify-between items-start">
+            <div className="absolute top-4 right-4 w-84 bg-slate-900/95 backdrop-blur-md border border-slate-700 rounded-xl shadow-2xl z-30 p-4 text-white space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
                 <div>
-                  <h3 className="text-lg font-bold text-urja-text">{selectedVehicle.vehicle_code}</h3>
-                  <p className="text-xs text-urja-text-secondary">{selectedDept?.name}</p>
+                  <h3 className="text-sm font-extrabold text-white tracking-wider">
+                    {selectedVehicle.vehicle_code}
+                  </h3>
+                  <p className="text-xs text-slate-400">{selectedDept?.name || 'Department'}</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedVehicleId(null)}
-                  className="p-1 hover:bg-urja-pale rounded-md text-urja-text-secondary hover:text-urja-text transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <span className="material-symbols-outlined text-lg">close</span>
                 </button>
               </div>
-              
-              <div className="p-4 space-y-4">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-urja-text-secondary">Battery (SoC)</span>
-                    <span className="font-medium text-urja-text">{selectedVehicle.soc_pct ?? 0}%</span>
-                  </div>
-                  <div className="w-full bg-urja-pale rounded-full h-2 overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${
-                        (selectedVehicle.soc_pct || 0) > 50 ? 'bg-emerald-500' : 
-                        (selectedVehicle.soc_pct || 0) > 20 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${selectedVehicle.soc_pct || 0}%` }}
-                    ></div>
-                  </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-semibold uppercase">Operational Status</span>
+                  <StatusBadge status={getVehicleStatus(selectedVehicle)} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-urja-bg p-3 rounded-lg border border-urja-border">
-                    <div className="text-[10px] text-urja-text-muted uppercase font-semibold mb-1">Speed</div>
-                    <div className="text-lg font-medium text-urja-text">
-                      {selectedVehicle.speed_kph ? Math.round(selectedVehicle.speed_kph) : 0} <span className="text-xs text-urja-text-muted font-normal">km/h</span>
+                <div className="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-slate-400 font-semibold">State of Charge (SOC)</span>
+                    <span className="font-mono font-bold text-teal-400">{selectedVehicle.soc_pct ?? 0}%</span>
+                  </div>
+                  <BatteryIndicator soc={selectedVehicle.soc_pct} isCharging={selectedVehicle.charging} size="lg" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Current Speed</span>
+                    <div className="text-sm font-extrabold text-slate-200 mt-0.5">
+                      {selectedVehicle.speed_kph ? `${Math.round(selectedVehicle.speed_kph)} km/h` : '0 km/h'}
                     </div>
                   </div>
-                  <div className="bg-urja-bg p-3 rounded-lg border border-urja-border">
-                    <div className="text-[10px] text-urja-text-muted uppercase font-semibold mb-1">Est. Range</div>
-                    <div className="text-lg font-medium text-urja-text">
+                  <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800">
+                    <span className="text-[10px] text-slate-500 font-bold uppercase">Est. Range</span>
+                    <div className="text-sm font-extrabold text-slate-200 mt-0.5">
                       {formatRange(selectedVehicle.estimated_range_km)}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-urja-bg p-3 rounded-lg border border-urja-border space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-urja-text-secondary flex items-center gap-2"><Navigation2 className="w-4 h-4" /> Coordinates</span>
-                    <span className="text-urja-text font-mono text-xs">
-                      {selectedVehicle.latitude?.toFixed(4) || '--'}, {selectedVehicle.longitude?.toFixed(4) || '--'}
+                <div className="p-2.5 bg-slate-950 rounded-lg border border-slate-800 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">GPS Coordinates</span>
+                    <span className="font-mono font-bold text-slate-200 text-[11px]">
+                      {selectedVehicle.latitude?.toFixed(4)}, {selectedVehicle.longitude?.toFixed(4)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-urja-text-secondary flex items-center gap-2"><Activity className="w-4 h-4" /> Connectivity</span>
-                    <span className="text-urja-text capitalize">{selectedVehicle.connectivity_status || 'Unknown'}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400">Last Telemetry Update</span>
+                    <span className="text-slate-300 text-[11px]">
+                      {selectedVehicle.last_seen ? formatRelativeTime(selectedVehicle.last_seen) : 'N/A'}
+                    </span>
                   </div>
-                </div>
-                
-                <div className="text-xs text-center text-urja-text-muted pt-2 border-t border-urja-border">
-                  Last updated: {selectedVehicle.last_seen ? formatRelativeTime(selectedVehicle.last_seen) : 'Never'}
                 </div>
               </div>
             </div>

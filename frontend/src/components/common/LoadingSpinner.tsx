@@ -1,4 +1,5 @@
 import React from 'react';
+import { YatraLogo } from './YatraLogo';
 
 export interface LoadingSpinnerProps {
   message?: string;
@@ -44,19 +45,12 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       <div className="relative flex items-center justify-center mb-5">
         {/* Ambient Pulsing Glow behind the Logo */}
         <div
-          className={`absolute rounded-full bg-gradient-to-r from-lime-400/30 via-emerald-400/25 to-sky-400/15 blur-2xl animate-pulse ${current.glowSize} pointer-events-none`}
+          className={`absolute rounded-full bg-gradient-to-r from-teal-400/30 via-emerald-400/25 to-sky-400/15 blur-2xl animate-pulse ${current.glowSize} pointer-events-none`}
         />
 
-        {/* Animated Vector URJA Logo */}
-        <div className="relative z-10">
-          <img
-            src="/urja-loading.svg"
-            alt="URJA Animated Loader"
-            className={`${current.imgDimensions} object-contain transition-all duration-300 drop-shadow-md`}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = '/urja-logo.svg';
-            }}
-          />
+        {/* Animated Yatra Logo */}
+        <div className="relative z-10 animate-pulse">
+          <YatraLogo height={size === 'sm' ? 32 : size === 'lg' ? 54 : 42} />
         </div>
       </div>
 

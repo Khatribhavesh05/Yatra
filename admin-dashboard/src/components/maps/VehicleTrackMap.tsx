@@ -12,28 +12,28 @@ interface VehicleTrackMapProps {
   vehicleCode?: string;
 }
 
-const GOOGLE_HYBRID_STYLE: maplibregl.StyleSpecification = {
+const OSM_RASTER_STYLE: maplibregl.StyleSpecification = {
   version: 8,
   sources: {
-    'google-tiles': {
+    'osm-tiles': {
       type: 'raster',
-      tiles: ['https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'],
+      tiles: [
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      ],
       tileSize: 256,
-      attribution: '© Google Maps',
+      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',
     },
   },
   layers: [
     {
-      id: 'google-tiles-layer',
+      id: 'osm-layer',
       type: 'raster',
-      source: 'google-tiles',
+      source: 'osm-tiles',
       minzoom: 0,
-      maxzoom: 22,
+      maxzoom: 19,
     },
   ],
 };
-
-const CARTO_DARK_STYLE = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
 
 export default function VehicleTrackMap({
   trackPoints,
@@ -48,7 +48,7 @@ export default function VehicleTrackMap({
   const marker = useRef<maplibregl.Marker | null>(null);
   const trailMarkersRef = useRef<maplibregl.Marker[]>([]);
 
-  const [mapStyle, setMapStyle] = useState<'satellite' | 'dark'>('satellite');
+  const [mapStyle, setMapStyle] = useState<'satellite' | 'dark'>('dark');
 
   // Initialize Map
   useEffect(() => {
@@ -57,13 +57,14 @@ export default function VehicleTrackMap({
     if (!map.current) {
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: GOOGLE_HYBRID_STYLE,
+        style: OSM_RASTER_STYLE,
         center: [currentLng ?? 77.209, currentLat ?? 28.6139],
         zoom: 13,
         attributionControl: false,
       });
 
       map.current.addControl(new maplibregl.NavigationControl(), 'top-left');
+      map.current.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-right');
 
       const setupLayers = () => {
         if (!map.current) return;
@@ -107,7 +108,7 @@ export default function VehicleTrackMap({
               'line-cap': 'round',
             },
             paint: {
-              'line-color': '#10b981', // emerald-500
+              'line-color': '#10b981', // teal-500
               'line-width': 4.5,
               'line-opacity': 0.9,
             },
@@ -119,10 +120,17 @@ export default function VehicleTrackMap({
     }
   }, [currentLat, currentLng]);
 
-  // Handle Style Switching
+  // Handle Style Switching via canvas filter safely without CARTO API key
   useEffect(() => {
-    if (!map.current) return;
-    map.current.setStyle(mapStyle === 'dark' ? CARTO_DARK_STYLE : GOOGLE_HYBRID_STYLE);
+    if (!mapContainer.current) return;
+    const canvas = mapContainer.current.querySelector('.maplibregl-canvas') as HTMLElement | null;
+    if (!canvas) return;
+
+    if (mapStyle === 'dark') {
+      canvas.style.filter = 'invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)';
+    } else {
+      canvas.style.filter = 'none';
+    }
   }, [mapStyle]);
 
   // Update track line, telemetry dots, and fit bounds
@@ -206,7 +214,7 @@ export default function VehicleTrackMap({
 
       el.innerHTML = `
         <div class="relative flex items-center justify-center">
-          <div class="absolute -inset-2 rounded-full bg-emerald-500/40 animate-ping"></div>
+          <div class="absolute -inset-2 rounded-full bg-teal-500/40 animate-ping"></div>
           <div style="
             width: 36px; height: 36px;
             background: #006a3b;
@@ -268,7 +276,7 @@ export default function VehicleTrackMap({
         <button
           onClick={() => setMapStyle('satellite')}
           className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-            mapStyle === 'satellite' ? 'bg-emerald-600 text-white shadow' : 'text-slate-300 hover:text-white'
+            mapStyle === 'satellite' ? 'bg-teal-600 text-white shadow' : 'text-slate-300 hover:text-white'
           }`}
         >
           Satellite
@@ -276,7 +284,7 @@ export default function VehicleTrackMap({
         <button
           onClick={() => setMapStyle('dark')}
           className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-            mapStyle === 'dark' ? 'bg-emerald-600 text-white shadow' : 'text-slate-300 hover:text-white'
+            mapStyle === 'dark' ? 'bg-teal-600 text-white shadow' : 'text-slate-300 hover:text-white'
           }`}
         >
           Dark Mode

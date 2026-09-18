@@ -70,7 +70,7 @@ export const AboutPage: React.FC = () => {
             </h2>
             <div className="space-y-4 text-xs sm:text-sm text-on-surface-variant leading-relaxed">
               <p>
-                The FleetIQ / URJA platform is designed under strict government privacy frameworks. When you use this portal to track public electric buses or find EV charging stations:
+                The Yatra (यात्रा) platform is designed under strict government privacy frameworks. When you use this portal to track public electric buses or find EV charging stations:
               </p>
               <ul className="list-disc pl-5 space-y-2">
                 <li><strong>Zero Citizen Tracking:</strong> We do not track, log, or profile your movement, search queries, or device IDs.</li>
@@ -91,7 +91,7 @@ export const AboutPage: React.FC = () => {
               </h3>
             </div>
             <p className="font-body-md text-xs sm:text-sm text-on-surface-variant leading-relaxed">
-              FleetIQ is committed to ensuring digital accessibility for people of all abilities. The platform conforms to <strong>WCAG 2.1 Level AA</strong> standards, featuring high-contrast institutional typography, keyboard navigation, and screen reader-friendly semantic HTML.
+              Yatra is committed to ensuring digital accessibility for people of all abilities. The platform conforms to <strong>WCAG 2.1 Level AA</strong> standards, featuring high-contrast institutional typography, keyboard navigation, and screen reader-friendly semantic HTML.
             </p>
           </div>
 

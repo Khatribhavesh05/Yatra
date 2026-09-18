@@ -5,7 +5,10 @@ import { getDepartments } from '../api/departments';
 import { UserRoleLabels } from '../types/enums';
 import { formatRelativeTime, formatDate } from '../utils/formatters';
 import { QUERY_KEYS } from '../utils/constants';
-import { Users as UsersIcon, UserPlus, Mail, Shield, Building, ToggleLeft, ToggleRight, X } from 'lucide-react';
+import PageHeader from '../components/common/PageHeader';
+import StatusBadge from '../components/common/StatusBadge';
+import { FilterSelect } from '../components/common/FilterControls';
+import { EmptyState, ErrorState } from '../components/common/FeedbackStates';
 
 export default function Users() {
   const queryClient = useQueryClient();
@@ -14,7 +17,7 @@ export default function Users() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [statusReason, setStatusReason] = useState('');
-  
+
   const [inviteForm, setInviteForm] = useState({
     email: '',
     password: '',
@@ -23,7 +26,7 @@ export default function Users() {
     department_id: '',
   });
 
-  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
+  const { data: users = [], isLoading: isLoadingUsers, isError, refetch } = useQuery({
     queryKey: [QUERY_KEYS.USERS, deptFilter !== 'ALL' ? deptFilter : undefined],
     queryFn: () => getUsers(deptFilter !== 'ALL' ? deptFilter : undefined, 100, 0),
   });
@@ -39,13 +42,17 @@ export default function Users() {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USERS] });
       setInviteModalOpen(false);
       setInviteForm({
-        email: '', password: '', full_name: '', role: 'DEPARTMENT_MEMBER', department_id: ''
+        email: '',
+        password: '',
+        full_name: '',
+        role: 'DEPARTMENT_MEMBER',
+        department_id: '',
       });
     },
   });
 
   const statusMutation = useMutation({
-    mutationFn: (data: { id: string; is_active: boolean; reason: string }) => 
+    mutationFn: (data: { id: string; is_active: boolean; reason: string }) =>
       updateUserStatus(data.id, { is_active: data.is_active, reason: data.reason }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEYS.USERS] });
@@ -77,168 +84,230 @@ export default function Users() {
   };
 
   const getDeptName = (id: string | null | undefined) => {
-    if (!id) return 'None';
+    if (!id) return 'System-Wide';
     const dept = departments.find((d: any) => d.id === id);
     return dept ? dept.name : id;
   };
 
+  if (isError) {
+    return (
+      <ErrorState
+        title="Failed to Load Access Registry"
+        message="Could not load system user accounts or permission roles."
+        onRetry={refetch}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-urja-text">Users & Roles</h1>
-          <p className="text-urja-text-secondary mt-1">Manage system access and permissions.</p>
+      <PageHeader
+        title="Government Access Control Registry"
+        subtitle="Manage state transport officers, department administrators, and platform credentials."
+        badgeText="ACCESS REGISTRY"
+        actions={
+          <button
+            onClick={() => setInviteModalOpen(true)}
+            className="yatra-btn-primary"
+          >
+            <span className="material-symbols-outlined text-base">person_add</span>
+            Invite Officer Account
+          </button>
+        }
+      />
+
+      {/* Toolbar */}
+      <div className="yatra-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Department Scope:</span>
+          <FilterSelect
+            value={deptFilter}
+            onChange={setDeptFilter}
+            placeholder="All Departments"
+            options={departments.map((d: any) => ({ value: d.id, label: d.name }))}
+            className="w-56"
+          />
         </div>
-        <button
-          onClick={() => setInviteModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-urja-primary hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors"
-        >
-          <UserPlus className="w-4 h-4" />
-          Invite User
-        </button>
+
+        <div className="text-xs font-semibold text-slate-500">
+          Total Users: <span className="font-bold text-slate-900">{users.length}</span>
+        </div>
       </div>
 
-      <div className="bg-urja-surface border border-urja-border rounded-2xl shadow-sm hover:shadow hover:border-urja-green-border hover:-translate-y-1 transition-all duration-200 p-4 flex gap-4 items-center">
-        <label className="text-sm text-urja-text-secondary font-medium">Filter by Department:</label>
-        <select
-          value={deptFilter}
-          onChange={(e) => setDeptFilter(e.target.value)}
-          className="bg-urja-pale border border-urja-green-border text-urja-text rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        >
-          <option value="ALL">All Departments</option>
-          {departments.map((dept: any) => (
-            <option key={dept.id} value={dept.id}>{dept.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="bg-urja-surface border border-urja-border rounded-2xl shadow-sm hover:shadow hover:border-urja-green-border hover:-translate-y-1 transition-all duration-200 overflow-hidden">
+      {/* Registry Table */}
+      <div className="yatra-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-urja-pale border-b border-urja-green-border/50 text-urja-text-secondary text-xs uppercase tracking-wider">
-              <tr>
-                <th className="p-4 font-medium">Name</th>
-                <th className="p-4 font-medium">Email</th>
-                <th className="p-4 font-medium">Role</th>
-                <th className="p-4 font-medium">Department</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium">Last Login</th>
-                <th className="p-4 font-medium">Created</th>
-                <th className="p-4 font-medium">Actions</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px] font-bold uppercase tracking-wider">
+                <th className="py-3 px-4">Officer Name</th>
+                <th className="py-3 px-4">Official Email</th>
+                <th className="py-3 px-4">System Role</th>
+                <th className="py-3 px-4">Department Scope</th>
+                <th className="py-3 px-4">Account Status</th>
+                <th className="py-3 px-4">Last Active</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800 text-sm text-urja-text-secondary">
+            <tbody className="divide-y divide-slate-100 text-xs text-slate-800 font-medium">
               {isLoadingUsers || isLoadingDepts ? (
-                <tr><td colSpan={8} className="p-8 text-center text-urja-text-muted">Loading users...</td></tr>
-              ) : users.length === 0 ? (
-                <tr><td colSpan={8} className="p-8 text-center text-urja-text-muted">No users found.</td></tr>
-              ) : (
+                [...Array(5)].map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td colSpan={7} className="py-4 px-4 bg-slate-50/50" />
+                  </tr>
+                ))
+              ) : users.length > 0 ? (
                 users.map((user: any) => (
-                  <tr key={user.id} className="hover:bg-urja-pale/30 transition-colors">
-                    <td className="p-4 font-medium text-urja-text">{user.full_name || '—'}</td>
-                    <td className="p-4 text-urja-text-secondary">{user.email}</td>
-                    <td className="p-4">
-                      <span className="px-2.5 py-1 bg-urja-pale text-urja-text-secondary text-xs rounded-md">
+                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3.5 px-4 font-bold text-slate-900">{user.full_name || '—'}</td>
+                    <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">{user.email}</td>
+                    <td className="py-3.5 px-4">
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded font-semibold text-[11px] uppercase tracking-wider">
                         {UserRoleLabels[user.role as keyof typeof UserRoleLabels] || user.role}
                       </span>
                     </td>
-                    <td className="p-4 text-urja-text-secondary">{getDeptName(user.department_id ?? undefined)}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        user.is_active ? 'bg-urja-success/10 text-urja-success' : 'bg-urja-danger/10 text-urja-danger'
-                      }`}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                    <td className="py-3.5 px-4 text-slate-700 font-medium">{getDeptName(user.department_id)}</td>
+                    <td className="py-3.5 px-4">
+                      <StatusBadge status={user.is_active ? 'active' : 'inactive'} />
                     </td>
-                    <td className="p-4 text-urja-text-secondary">{user.last_login_at ? formatRelativeTime(user.last_login_at) : 'Never'}</td>
-                    <td className="p-4 text-urja-text-secondary">{formatDate(user.created_at)}</td>
-                    <td className="p-4">
+                    <td className="py-3.5 px-4 text-slate-500 text-[11px]">
+                      {user.last_login_at ? formatRelativeTime(user.last_login_at) : 'Never'}
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => handleStatusToggle(user)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          user.is_active ? 'text-urja-text-secondary hover:text-urja-danger hover:bg-red-400/10' : 'text-urja-text-secondary hover:text-urja-primary hover:bg-emerald-400/10'
+                        className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
+                          user.is_active
+                            ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                            : 'bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200'
                         }`}
-                        title={user.is_active ? "Deactivate User" : "Activate User"}
                       >
-                        {user.is_active ? <ToggleRight className="w-5 h-5 text-urja-success" /> : <ToggleLeft className="w-5 h-5" />}
+                        {user.is_active ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="py-8">
+                    <EmptyState
+                      title="No Users Registered"
+                      description="No user accounts match the selected department filter."
+                      icon="group"
+                    />
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* Invite Modal */}
       {inviteModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-urja-surface border border-urja-border rounded-2xl shadow-sm hover:shadow hover:border-urja-green-border hover:-translate-y-1 transition-all duration-200 w-full max-w-md shadow-2xl">
-            <div className="flex justify-between items-center p-6 border-b border-urja-border">
-              <h2 className="text-xl font-semibold text-urja-text flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-urja-success" />
-                Invite New User
-              </h2>
-              <button onClick={() => setInviteModalOpen(false)} className="text-urja-text-secondary hover:text-urja-text">
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-5 border-b border-slate-100 bg-slate-50">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                Provision Officer Account
+              </h3>
+              <button
+                onClick={() => setInviteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
+
             <form onSubmit={handleInviteSubmit}>
-              <div className="p-6 space-y-4">
+              <div className="p-5 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-urja-text-secondary mb-1">Email Address</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Official Email
+                  </label>
                   <input
-                    required type="email" value={inviteForm.email}
-                    onChange={(e) => setInviteForm({...inviteForm, email: e.target.value})}
-                    className="w-full bg-urja-pale border border-urja-green-border rounded-lg px-4 py-2 text-urja-text focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                    type="email"
+                    value={inviteForm.email}
+                    onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
+                    className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600"
+                    placeholder="officer@yatra.gov.in"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-urja-text-secondary mb-1">Temporary Password</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Temporary Password
+                  </label>
                   <input
-                    required type="password" value={inviteForm.password}
-                    onChange={(e) => setInviteForm({...inviteForm, password: e.target.value})}
-                    className="w-full bg-urja-pale border border-urja-green-border rounded-lg px-4 py-2 text-urja-text focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                    type="password"
+                    value={inviteForm.password}
+                    onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })}
+                    className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600"
+                    placeholder="••••••••"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-urja-text-secondary mb-1">Full Name</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Officer Full Name
+                  </label>
                   <input
-                    type="text" value={inviteForm.full_name}
-                    onChange={(e) => setInviteForm({...inviteForm, full_name: e.target.value})}
-                    className="w-full bg-urja-pale border border-urja-green-border rounded-lg px-4 py-2 text-urja-text focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    type="text"
+                    value={inviteForm.full_name}
+                    onChange={(e) => setInviteForm({ ...inviteForm, full_name: e.target.value })}
+                    className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600"
+                    placeholder="Officer Name"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-urja-text-secondary mb-1">Role</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Access Role
+                  </label>
                   <select
                     value={inviteForm.role}
-                    onChange={(e) => setInviteForm({...inviteForm, role: e.target.value})}
-                    className="w-full bg-urja-pale border border-urja-green-border rounded-lg px-4 py-2 text-urja-text focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
+                    className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600"
                   >
                     {Object.entries(UserRoleLabels).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-urja-text-secondary mb-1">Department</label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Department Assignment
+                  </label>
                   <select
                     value={inviteForm.department_id}
-                    onChange={(e) => setInviteForm({...inviteForm, department_id: e.target.value})}
-                    className="w-full bg-urja-pale border border-urja-green-border rounded-lg px-4 py-2 text-urja-text focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    onChange={(e) => setInviteForm({ ...inviteForm, department_id: e.target.value })}
+                    className="w-full h-10 px-3 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600"
                   >
-                    <option value="">None / System Wide</option>
+                    <option value="">System-Wide / Platform Admin</option>
                     {departments.map((dept: any) => (
                       <option key={dept.id} value={dept.id}>{dept.name}</option>
                     ))}
                   </select>
                 </div>
               </div>
-              <div className="flex justify-end gap-3 p-6 border-t border-urja-border bg-urja-surface/50">
-                <button type="button" onClick={() => setInviteModalOpen(false)} className="px-4 py-2 text-sm font-medium text-urja-text-secondary">Cancel</button>
-                <button type="submit" disabled={inviteMutation.isPending} className="px-4 py-2 bg-urja-primary hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-                  {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
+
+              <div className="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50">
+                <button
+                  type="button"
+                  onClick={() => setInviteModalOpen(false)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={inviteMutation.isPending}
+                  className="yatra-btn-primary text-xs"
+                >
+                  {inviteMutation.isPending ? 'Provisioning...' : 'Provision Account'}
                 </button>
               </div>
             </form>
@@ -246,33 +315,40 @@ export default function Users() {
         </div>
       )}
 
+      {/* Status Modal */}
       {statusModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-urja-surface border border-urja-border rounded-2xl shadow-sm hover:shadow hover:border-urja-green-border hover:-translate-y-1 transition-all duration-200 w-full max-w-md shadow-2xl p-6">
-            <h2 className="text-xl font-semibold text-urja-text mb-2">
-              {selectedUser.is_active ? 'Deactivate User' : 'Activate User'}
-            </h2>
-            <p className="text-urja-text-secondary mb-4 text-sm">
-              Are you sure you want to {selectedUser.is_active ? 'deactivate' : 'activate'} <span className="font-medium text-urja-text">{selectedUser.email}</span>?
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-md overflow-hidden p-5">
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+              {selectedUser.is_active ? 'Deactivate Officer Account' : 'Activate Officer Account'}
+            </h3>
+            <p className="text-xs text-slate-600 mb-4">
+              Are you sure you want to change access status for <span className="font-bold text-slate-900">{selectedUser.email}</span>?
             </p>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-urja-text-secondary mb-1">Reason (Optional)</label>
-              <input
-                type="text"
-                value={statusReason}
-                onChange={(e) => setStatusReason(e.target.value)}
-                className="w-full bg-urja-pale border border-urja-green-border rounded-lg px-4 py-2 text-urja-text focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Brief reason for status change"
-              />
-            </div>
+
+            <input
+              type="text"
+              value={statusReason}
+              onChange={(e) => setStatusReason(e.target.value)}
+              className="w-full h-10 px-3 text-xs bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:border-teal-600 mb-4"
+              placeholder="Reason for status change..."
+            />
+
             <div className="flex justify-end gap-3">
-              <button onClick={() => setStatusModalOpen(false)} className="px-4 py-2 text-sm font-medium text-urja-text-secondary">Cancel</button>
-              <button 
-                onClick={confirmStatusToggle} 
-                disabled={statusMutation.isPending} 
-                className={`px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 ${selectedUser.is_active ? 'bg-red-600 hover:bg-red-500' : 'bg-urja-primary hover:bg-emerald-500'}`}
+              <button
+                onClick={() => setStatusModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
               >
-                {statusMutation.isPending ? 'Saving...' : 'Confirm'}
+                Cancel
+              </button>
+              <button
+                onClick={confirmStatusToggle}
+                disabled={statusMutation.isPending}
+                className={`px-4 py-2 text-xs font-bold rounded-lg text-white transition-colors ${
+                  selectedUser.is_active ? 'bg-rose-600 hover:bg-rose-700' : 'bg-teal-700 hover:bg-teal-800'
+                }`}
+              >
+                {statusMutation.isPending ? 'Saving...' : 'Confirm Status Change'}
               </button>
             </div>
           </div>

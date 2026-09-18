@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { YatraLogo } from '../common/YatraLogo';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,14 +9,7 @@ export const Footer: React.FC = () => {
         {/* Brand Column */}
         <div className="space-y-4">
           <Link to="/" className="flex items-center gap-2">
-            <img
-              src="/urja-logo-darkmode.svg"
-              alt="URJA Logo"
-              className="h-10 w-auto object-contain"
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = '/urja-logo-darkmode.png';
-              }}
-            />
+            <YatraLogo variant="full-dark" height={36} />
           </Link>
           <p className="font-body-md text-sm text-on-primary/80 leading-relaxed">
             An official Government initiative to accelerate electric mobility, unify charging infrastructure, and build a sustainable transportation ecosystem nationwide.
@@ -137,7 +131,7 @@ export const Footer: React.FC = () => {
       <div className="border-t border-on-primary/20 bg-secondary/90">
         <div className="max-w-container-max-width mx-auto px-gutter py-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="font-body-md text-xs text-on-primary/80">
-            © 2024-2026 URJA (FleetIQ). All rights reserved. Government of India Initiative.
+            © 2024-2026 Yatra (यात्रा). All rights reserved. Government of India Initiative.
           </p>
           <div className="flex flex-wrap gap-6 font-body-md text-xs text-on-primary/80">
             <Link to="/about#privacy" className="hover:text-on-primary hover:underline">

@@ -1,67 +1,60 @@
+import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { UserRoleLabels } from '../types/enums';
-import { UserCircle, Mail, Shield, Building2, LogOut } from 'lucide-react';
+import PageHeader from '../components/common/PageHeader';
+import StatusBadge from '../components/common/StatusBadge';
+import { DetailPanel, InfoRow } from '../components/common/DetailComponents';
 
 export default function Profile() {
   const { user, logout } = useAuth();
 
   if (!user) return null;
 
-  const infoItems = [
-    { icon: Mail, label: 'Email', value: user.email },
-    { icon: Shield, label: 'Role', value: UserRoleLabels[user.role] || user.role },
-    { icon: Building2, label: 'Department', value: user.department_name || 'Platform-wide (No Department)' },
-  ];
-
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-xl font-bold text-urja-text">Profile</h1>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <PageHeader
+        title="Officer Account Profile"
+        subtitle="Credentials, assigned department scope, and security permissions."
+        badgeText="OFFICER PROFILE"
+        actions={
+          <button
+            onClick={logout}
+            className="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-lg transition-colors flex items-center gap-1.5"
+          >
+            <span className="material-symbols-outlined text-base">logout</span>
+            Sign Out
+          </button>
+        }
+      />
 
-      <div className="bg-urja-surface border border-urja-border rounded-2xl shadow-sm hover:shadow hover:border-urja-green-border hover:-translate-y-1 transition-all duration-200 p-6">
-        {/* Avatar + Name */}
-        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-urja-border">
-          <div className="h-16 w-16 rounded-full bg-urja-pale border border-urja-green-border flex items-center justify-center">
-            <UserCircle className="h-10 w-10 text-urja-text-muted" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-urja-text">{user.full_name}</h2>
-            <p className="text-sm text-urja-text-secondary">{UserRoleLabels[user.role] || user.role}</p>
-          </div>
-          <div className="ml-auto">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-              user.is_active
-                ? 'bg-urja-success/10 text-urja-primary border border-urja-success/20'
-                : 'bg-urja-danger/10 text-urja-danger border border-urja-danger/20'
-            }`}>
-              {user.is_active ? 'Active' : 'Inactive'}
-            </span>
-          </div>
+      {/* Account Dossier Card */}
+      <div className="yatra-card p-6 flex items-center gap-5">
+        <div className="h-16 w-16 rounded-xl bg-teal-700 text-white text-2xl font-extrabold flex items-center justify-center shadow-md shrink-0">
+          {user.full_name?.charAt(0).toUpperCase() || 'U'}
         </div>
-
-        {/* Info rows */}
-        <div className="space-y-4">
-          {infoItems.map((item) => (
-            <div key={item.label} className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-urja-pale flex items-center justify-center shrink-0">
-                <item.icon className="h-4 w-4 text-urja-text-muted" />
-              </div>
-              <div>
-                <div className="text-[11px] text-urja-text-muted uppercase font-medium tracking-wider">{item.label}</div>
-                <div className="text-sm text-urja-text">{item.value}</div>
-              </div>
-            </div>
-          ))}
+        <div className="space-y-1 flex-1">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-extrabold text-slate-900">{user.full_name}</h2>
+            <StatusBadge status={user.is_active ? 'active' : 'inactive'} />
+          </div>
+          <p className="text-xs text-slate-500 font-medium font-mono">{user.email}</p>
+          <span className="inline-block text-[11px] font-bold text-teal-800 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded uppercase tracking-wider">
+            {UserRoleLabels[user.role as keyof typeof UserRoleLabels] || user.role}
+          </span>
         </div>
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={logout}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-urja-danger bg-urja-danger/10 border border-urja-danger/20 hover:bg-urja-danger/10 transition-colors"
-      >
-        <LogOut className="h-4 w-4" />
-        Sign out
-      </button>
+      {/* Detail Panels */}
+      <DetailPanel title="Credentials & Security Scope" icon="shield">
+        <InfoRow label="Officer Full Name" value={user.full_name} />
+        <InfoRow label="Official Email" value={<span className="font-mono text-slate-900">{user.email}</span>} />
+        <InfoRow
+          label="Assigned System Role"
+          value={<span className="font-bold text-slate-900">{UserRoleLabels[user.role as keyof typeof UserRoleLabels] || user.role}</span>}
+        />
+        <InfoRow label="Assigned Department Scope" value={user.department_name || 'System-Wide / All Divisions'} />
+        <InfoRow label="Account Security Status" value={<StatusBadge status={user.is_active ? 'active' : 'inactive'} />} border={false} />
+      </DetailPanel>
     </div>
   );
 }
