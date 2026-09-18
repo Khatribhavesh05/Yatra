@@ -103,6 +103,34 @@ export interface HelpContact {
   last_verified_at?: string | null;
 }
 
+export type GrievanceCategory =
+  | 'Bus Delay'
+  | 'Vehicle Condition'
+  | 'Charging Station Issue'
+  | 'Driver Conduct'
+  | 'Other';
+
+export interface GrievanceCreate {
+  category: GrievanceCategory | string;
+  description: string;
+  city?: string;
+  reporter_name?: string;
+  reporter_phone?: string;
+  reporter_email?: string;
+}
+
+export interface Grievance {
+  id: string;
+  category: string;
+  description: string;
+  city?: string | null;
+  reporter_name?: string | null;
+  reporter_phone?: string | null;
+  reporter_email?: string | null;
+  status: string;
+  created_at: string;
+}
+
 export interface User {
   id: string;
   email: string;

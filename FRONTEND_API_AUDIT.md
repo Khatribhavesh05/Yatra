@@ -1,4 +1,4 @@
-# ChargeEase — Frontend API Audit
+# Yatra — Frontend API Audit
 
 > **Generated**: 2026-08-28
 > **Purpose**: Document all backend API endpoints, their contracts, and identify gaps for the Super Admin Dashboard.

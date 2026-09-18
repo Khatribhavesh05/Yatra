@@ -8,8 +8,8 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
-  const [email, setEmail] = useState('operator@fleetiq.gov.in');
-  const [password, setPassword] = useState('Admin@123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -121,29 +121,6 @@ export const LoginPage: React.FC = () => {
             </Button>
           </div>
         </form>
-
-        {/* Demo Credentials Helper */}
-        <div className="mt-8 pt-6 border-t border-outline-variant/50 text-center">
-          <span className="text-[10px] font-label-bold uppercase tracking-wider text-outline">
-            Preloaded Operator Account
-          </span>
-          <div className="mt-2 p-2 rounded bg-surface-container text-xs text-on-surface font-mono text-left flex justify-between items-center">
-            <div>
-              <div><strong>Email:</strong> admin@fleetiq.gov.in</div>
-              <div><strong>Pass:</strong> Admin@123456</div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@fleetiq.gov.in');
-                setPassword('Admin@123456');
-              }}
-              className="text-[11px] text-primary font-bold hover:underline"
-            >
-              Auto-fill
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

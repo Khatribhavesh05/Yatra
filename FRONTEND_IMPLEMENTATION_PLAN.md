@@ -1,7 +1,7 @@
-# ChargeEase — Frontend Implementation Plan
+# Yatra — Frontend Implementation Plan
 
 > **Generated**: 2026-08-28  
-> **Companion Document**: [FRONTEND_API_AUDIT.md](file:///c:/Users/khana/OneDrive/Desktop/ChargeEase/FRONTEND_API_AUDIT.md)  
+> **Companion Document**: [FRONTEND_API_AUDIT.md](file:///c:/Users/khana/OneDrive/Desktop/Yatra/FRONTEND_API_AUDIT.md)  
 > **Status**: AWAITING APPROVAL — Do not begin coding until approved.
 
 ---

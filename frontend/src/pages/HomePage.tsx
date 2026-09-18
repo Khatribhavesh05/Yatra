@@ -44,17 +44,13 @@ export const HomePage: React.FC = () => {
   const operationalStationsCount = stations.filter((s) => s.status === 'operational').length;
   const liveBusesCount = vehicles.filter((v) => v.status === 'online').length;
 
-  const displayVehicles = vehicles.length > 0 ? vehicles.slice(0, 3).map((v, i) => ({
+  const displayVehicles = vehicles.slice(0, 3).map((v) => ({
     id: v.id,
-    code: v.vehicle_code || `BUS-10${i + 1}`,
-    route: v.route_name || (i === 2 ? 'Line 2 (Green E-Line): Railway Station ⇄ Karni Stadium' : 'Line 1 (Red E-Line): Beechwal RIICO ⇄ Ganga Shahar'),
-    speed: v.speed_kph ? `${v.speed_kph} km/h` : (i === 0 ? '32 km/h' : i === 1 ? '40 km/h' : '26 km/h'),
-    direction: v.direction ? v.direction.charAt(0).toUpperCase() : (i === 0 ? 'S' : i === 1 ? 'N' : 'E'),
-  })) : [
-    { id: '1', code: 'BUS-101', route: 'Line 1 (Red E-Line): Beechwal RIICO ⇄ Ganga Shahar', speed: '32 km/h', direction: 'S' },
-    { id: '2', code: 'BUS-102', route: 'Line 1 (Red E-Line): Beechwal RIICO ⇄ Ganga Shahar', speed: '40 km/h', direction: 'N' },
-    { id: '3', code: 'BUS-201', route: 'Line 2 (Green E-Line): Railway Station ⇄ Karni Stadium', speed: '26 km/h', direction: 'E' },
-  ];
+    code: v.vehicle_code,
+    route: v.route_name || 'Route unassigned',
+    speed: v.speed_kph != null ? `${v.speed_kph} km/h` : '—',
+    direction: v.direction ? v.direction.charAt(0).toUpperCase() : '—',
+  }));
 
   return (
     <div className="flex flex-col w-full">
@@ -178,11 +174,11 @@ export const HomePage: React.FC = () => {
                     Active E-Buses
                   </div>
                   <div className="text-3xl font-extrabold text-[#006a3b] mt-1 font-display">
-                    {loading ? '...' : (vehicles.length > 0 ? vehicles.length : 12)}
+                    {loading ? '...' : vehicles.length}
                   </div>
                   <div className="text-[11px] text-gray-600 font-medium mt-1.5 flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm text-[#006a3b]">sensors</span>
-                    <span>{liveBusesCount > 0 ? liveBusesCount : 10} Streaming Live</span>
+                    <span>{liveBusesCount} Streaming Live</span>
                   </div>
                 </div>
 
@@ -191,11 +187,11 @@ export const HomePage: React.FC = () => {
                     Charging Hubs
                   </div>
                   <div className="text-3xl font-extrabold text-[#006a3b] mt-1 font-display">
-                    {loading ? '...' : (stations.length > 0 ? stations.length : 8)}
+                    {loading ? '...' : stations.length}
                   </div>
                   <div className="text-[11px] text-gray-600 font-medium mt-1.5 flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-sm text-gray-800">bolt</span>
-                    <span>{operationalStationsCount > 0 ? operationalStationsCount : 6} Operational</span>
+                    <span>{operationalStationsCount} Operational</span>
                   </div>
                 </div>
               </div>
@@ -205,35 +201,45 @@ export const HomePage: React.FC = () => {
                 <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mt-4 mb-2.5">
                   Real-Time Bus Arrivals
                 </div>
-                {displayVehicles.map((item) => (
-                  <Link
-                    key={item.id}
-                    to="/bus"
-                    className="p-3 rounded-xl bg-white/80 backdrop-blur-md border border-white/90 shadow-xs hover:bg-white/95 transition-all flex items-center justify-between text-xs group"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <span className="material-symbols-outlined text-[#006a3b] text-xl shrink-0">
-                        directions_bus
-                      </span>
-                      <div className="min-w-0">
-                        <div className="font-bold text-gray-900 leading-tight group-hover:text-[#006a3b] transition-colors">
-                          {item.code}
-                        </div>
-                        <div className="text-gray-500 text-[11px] truncate leading-tight mt-0.5">
-                          {item.route}
+                {loading ? (
+                  <div className="p-4 rounded-xl bg-white/70 border border-white/90 text-xs text-gray-500 text-center">
+                    Loading live buses…
+                  </div>
+                ) : displayVehicles.length === 0 ? (
+                  <div className="p-4 rounded-xl bg-white/70 border border-white/90 text-xs text-gray-500 text-center">
+                    No buses currently online in {selectedCity}.
+                  </div>
+                ) : (
+                  displayVehicles.map((item) => (
+                    <Link
+                      key={item.id}
+                      to="/bus"
+                      className="p-3 rounded-xl bg-white/80 backdrop-blur-md border border-white/90 shadow-xs hover:bg-white/95 transition-all flex items-center justify-between text-xs group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 pr-2">
+                        <span className="material-symbols-outlined text-[#006a3b] text-xl shrink-0">
+                          directions_bus
+                        </span>
+                        <div className="min-w-0">
+                          <div className="font-bold text-gray-900 leading-tight group-hover:text-[#006a3b] transition-colors">
+                            {item.code}
+                          </div>
+                          <div className="text-gray-500 text-[11px] truncate leading-tight mt-0.5">
+                            {item.route}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="inline-block bg-[#e8f5ee] text-[#006a3b] border border-[#c6edd7] text-[11px] font-bold px-2 py-0.5 rounded-md">
-                        {item.speed}
-                      </span>
-                      <div className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                        {item.direction}
+                      <div className="text-right shrink-0">
+                        <span className="inline-block bg-[#e8f5ee] text-[#006a3b] border border-[#c6edd7] text-[11px] font-bold px-2 py-0.5 rounded-md">
+                          {item.speed}
+                        </span>
+                        <div className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                          {item.direction}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))
+                )}
               </div>
 
               {/* View Map Action */}

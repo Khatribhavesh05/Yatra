@@ -1,6 +1,6 @@
 # FLEETIQ PUBLIC WEBSITE AUDIT
 
-**Target Platform:** FleetIQ / URJA Government EV Fleet Intelligence Platform  
+**Target Platform:** FleetIQ / Yatra Government EV Fleet Intelligence Platform  
 **Audit Scope:** Public Website, Design System, Landing Page, Map Infrastructure, Telemetry, and FastAPI Backend  
 **Status Taxonomy:** `PROVEN` | `PARTIAL` | `MISSING` | `BROKEN` | `NOT VERIFIABLE`  
 **Date:** August 31, 2026

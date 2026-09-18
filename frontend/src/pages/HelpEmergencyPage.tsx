@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useCity } from '../context/CityContext';
 import { publicApi } from '../api/publicApi';
-import { HelpContact } from '../types';
+import { HelpContact, Grievance, GrievanceCategory } from '../types';
 import { HelpCard } from '../components/cards/HelpCard';
 import { SearchBar } from '../components/common/SearchBar';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
-import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { Select } from '../components/common/Select';
+
+const GRIEVANCE_CATEGORIES: GrievanceCategory[] = [
+  'Bus Delay',
+  'Vehicle Condition',
+  'Charging Station Issue',
+  'Driver Conduct',
+  'Other',
+];
 
 export const HelpEmergencyPage: React.FC = () => {
   const { selectedCity, selectedState, openCityModal } = useCity();
@@ -17,11 +26,14 @@ export const HelpEmergencyPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Grievance form state
-  const [grievanceSubmitted, setGrievanceSubmitted] = useState<boolean>(false);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
+  const [grievanceCategory, setGrievanceCategory] = useState<string>(GRIEVANCE_CATEGORIES[0]);
+  const [grievanceDescription, setGrievanceDescription] = useState('');
+  const [reporterName, setReporterName] = useState('');
+  const [reporterPhone, setReporterPhone] = useState('');
+  const [reporterEmail, setReporterEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submittedGrievance, setSubmittedGrievance] = useState<Grievance | null>(null);
 
   useEffect(() => {
     const fetchContacts = async () => {
@@ -49,10 +61,35 @@ export const HelpEmergencyPage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleGrievanceSubmit = (e: React.FormEvent) => {
+  const handleGrievanceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phone || !message) return;
-    setGrievanceSubmitted(true);
+    if (!grievanceDescription.trim()) return;
+
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await publicApi.submitGrievance({
+        category: grievanceCategory,
+        description: grievanceDescription.trim(),
+        city: selectedCity,
+        reporter_name: reporterName.trim() || undefined,
+        reporter_phone: reporterPhone.trim() || undefined,
+        reporter_email: reporterEmail.trim() || undefined,
+      });
+      setSubmittedGrievance(result);
+      setGrievanceDescription('');
+      setReporterName('');
+      setReporterPhone('');
+      setReporterEmail('');
+      setGrievanceCategory(GRIEVANCE_CATEGORIES[0]);
+    } catch (err: any) {
+      console.error('Failed to submit grievance:', err);
+      setSubmitError(
+        err.response?.data?.detail || 'Failed to submit your grievance. Please try again or use a helpline above.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -197,7 +234,7 @@ export const HelpEmergencyPage: React.FC = () => {
         </div>
 
         {/* Citizen Grievance Redressal Form */}
-        <div className="bg-white rounded-2xl border border-outline-variant p-6 sm:p-10 shadow-sm max-w-3xl mx-auto">
+        <div className="bg-white rounded-2xl border border-outline-variant p-6 sm:p-10 shadow-sm max-w-3xl mx-auto mb-10">
           <div className="text-center max-w-xl mx-auto mb-8">
             <div className="inline-flex items-center gap-1 text-xs font-label-bold text-secondary uppercase tracking-wider mb-2">
               <span className="material-symbols-outlined text-base">rate_review</span>
@@ -207,11 +244,11 @@ export const HelpEmergencyPage: React.FC = () => {
               Submit Public Grievance or Transit Feedback
             </h2>
             <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
-              Have an issue with a charging station, bus route, or driver conduct? Submit your complaint directly to the municipal transport authority.
+              Have an issue with a charging station, bus route, or driver conduct? Submit your complaint directly to the municipal transport authority for {selectedCity}.
             </p>
           </div>
 
-          {grievanceSubmitted ? (
+          {submittedGrievance ? (
             <div className="p-8 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-3">
               <span className="material-symbols-outlined text-emerald-600 text-4xl" data-weight="fill">
                 check_circle
@@ -220,38 +257,35 @@ export const HelpEmergencyPage: React.FC = () => {
                 Grievance Submitted Successfully
               </h3>
               <p className="text-xs text-emerald-800 max-w-md mx-auto">
-                Thank you. Your grievance ticket has been recorded with reference <strong>#GRV-{Math.floor(100000 + Math.random() * 900000)}</strong>. The nodal officer will review and update within 48 hours.
+                Thank you. Your grievance has been recorded with reference{' '}
+                <strong>#{submittedGrievance.id.slice(0, 8).toUpperCase()}</strong>. Status:{' '}
+                <strong>{submittedGrievance.status}</strong>. The nodal officer will review and update accordingly.
               </p>
-              <Button variant="outline" size="sm" onClick={() => setGrievanceSubmitted(false)}>
+              <Button variant="outline" size="sm" onClick={() => setSubmittedGrievance(null)}>
                 Submit Another Grievance
               </Button>
             </div>
           ) : (
             <form onSubmit={handleGrievanceSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Full Name *"
-                  placeholder="Enter your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Mobile Number *"
-                  placeholder="+91 98765 43210"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                />
-              </div>
+              {submitError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base shrink-0">error</span>
+                  <span>{submitError}</span>
+                </div>
+              )}
 
-              <Input
-                label="Grievance Category / Subject *"
-                placeholder="e.g., Charging Station Outage at Rani Bazar / Bus Delay on Line 101"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+              <Select
+                label="Grievance Category *"
+                value={grievanceCategory}
+                onChange={(e) => setGrievanceCategory(e.target.value)}
                 required
-              />
+              >
+                {GRIEVANCE_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </Select>
 
               <div className="space-y-1.5 text-left">
                 <label className="block text-label-sm text-on-surface font-semibold">
@@ -259,21 +293,84 @@ export const HelpEmergencyPage: React.FC = () => {
                 </label>
                 <textarea
                   rows={4}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  value={grievanceDescription}
+                  onChange={(e) => setGrievanceDescription(e.target.value)}
                   placeholder="Describe what occurred, station/vehicle number, date and time..."
                   className="w-full bg-white border border-outline-variant text-on-surface text-sm rounded-lg p-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                   required
                 />
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Input
+                  label="Full Name (optional)"
+                  placeholder="Enter your name"
+                  value={reporterName}
+                  onChange={(e) => setReporterName(e.target.value)}
+                />
+                <Input
+                  label="Mobile Number (optional)"
+                  placeholder="+91 98765 43210"
+                  value={reporterPhone}
+                  onChange={(e) => setReporterPhone(e.target.value)}
+                />
+                <Input
+                  label="Email (optional)"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={reporterEmail}
+                  onChange={(e) => setReporterEmail(e.target.value)}
+                />
+              </div>
+
+              <p className="text-[11px] text-on-surface-variant">
+                You may leave your contact details blank to submit anonymously.
+              </p>
+
               <div className="pt-2 flex justify-end">
-                <Button type="submit" variant="primary" icon="send">
+                <Button type="submit" variant="primary" icon="send" loading={submitting}>
                   Submit Official Grievance
                 </Button>
               </div>
             </form>
           )}
+        </div>
+
+        {/* Quick Dial Directory (reference contacts) */}
+        <div className="bg-white rounded-2xl border border-outline-variant p-6 sm:p-10 shadow-sm max-w-3xl mx-auto">
+          <div className="text-center max-w-xl mx-auto mb-6">
+            <div className="inline-flex items-center gap-1 text-xs font-label-bold text-secondary uppercase tracking-wider mb-2">
+              <span className="material-symbols-outlined text-base">call</span>
+              Prefer to Call Directly?
+            </div>
+            <h2 className="font-display-lg text-xl font-bold text-on-background">
+              Direct Helpline Contacts
+            </h2>
+            <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1">
+              Urgent issues are handled faster over the phone. These are pulled directly from verified
+              municipal records for {selectedCity}.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {filteredContacts.slice(0, 4).map((contact) => (
+              contact.phone ? (
+                <a
+                  key={contact.id}
+                  href={`tel:${contact.phone.replace(/[^0-9+]/g, '')}`}
+                  className="flex items-center justify-between p-4 rounded-xl border border-outline-variant hover:border-primary hover:bg-primary-container/5 transition-colors"
+                >
+                  <div className="min-w-0 pr-3">
+                    <div className="text-sm font-semibold text-on-background truncate">
+                      {contact.department}
+                    </div>
+                    <div className="text-xs text-on-surface-variant">{contact.phone}</div>
+                  </div>
+                  <span className="material-symbols-outlined text-primary shrink-0">call</span>
+                </a>
+              ) : null
+            ))}
+          </div>
         </div>
       </div>
     </div>

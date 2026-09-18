@@ -7,7 +7,9 @@ import {
   Stop,
   StopDetail,
   HelpContact,
-  VehiclePublic
+  VehiclePublic,
+  Grievance,
+  GrievanceCreate
 } from '../types';
 
 export const publicApi = {
@@ -93,6 +95,12 @@ export const publicApi = {
     category?: string;
   }): Promise<HelpContact[]> => {
     const res = await api.get('/api/public/help-contacts', { params });
+    return res.data;
+  },
+
+  // Citizen Grievances
+  submitGrievance: async (data: GrievanceCreate): Promise<Grievance> => {
+    const res = await api.post('/api/public/grievances', data);
     return res.data;
   },
 };

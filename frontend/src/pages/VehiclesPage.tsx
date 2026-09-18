@@ -77,8 +77,8 @@ export const VehiclesPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Environmental Impact & Sustainability Counters */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {/* Fleet Status Counters */}
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
           <div className="p-5 rounded-xl bg-white border border-outline-variant shadow-sm">
             <div className="flex items-center justify-between text-outline mb-2">
               <span className="text-xs font-label-bold uppercase">Total Clean Fleet</span>
@@ -110,17 +110,6 @@ export const VehiclesPage: React.FC = () => {
               {loading ? '...' : `${avgSoc}%`}
             </div>
             <p className="text-[11px] text-on-surface-variant mt-1">Healthy operating range</p>
-          </div>
-
-          <div className="p-5 rounded-xl bg-white border border-outline-variant shadow-sm">
-            <div className="flex items-center justify-between text-outline mb-2">
-              <span className="text-xs font-label-bold uppercase">Estimated CO2 Offset</span>
-              <span className="material-symbols-outlined text-secondary text-xl">eco</span>
-            </div>
-            <div className="text-3xl font-extrabold text-secondary font-display">
-              128.4 <span className="text-base font-normal">Tons</span>
-            </div>
-            <p className="text-[11px] text-on-surface-variant mt-1">Clean air contribution</p>
           </div>
         </div>
 
