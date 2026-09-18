@@ -14,15 +14,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getCachedUser = (): UserMeResponse | null => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CACHED_USER);
+    return raw ? (JSON.parse(raw) as UserMeResponse) : null;
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserMeResponse | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [user, setUser] = useState<UserMeResponse | null>(() => getCachedUser());
+  // If we already have a cached user, render immediately and revalidate in the background.
+  const [isLoading, setIsLoading] = useState<boolean>(() => getCachedUser() === null);
 
   const isAuthenticated = !!user;
 
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.CACHED_USER);
     setUser(null);
     window.location.href = '/login';
   };
@@ -31,6 +42,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const userData = await getMe();
       setUser(userData);
+      localStorage.setItem(STORAGE_KEYS.CACHED_USER, JSON.stringify(userData));
     } catch (error) {
       console.error('Failed to get user', error);
       throw error;
@@ -38,7 +50,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const checkAuth = async () => {
-    setIsLoading(true);
+    const hadCachedUser = getCachedUser() !== null;
+    if (!hadCachedUser) setIsLoading(true);
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
     if (token) {
       try {
@@ -68,6 +81,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(false);
   };
 
+  // Runs once on app mount. Auth state is verified a single time here and cached
+  // in localStorage; subsequent client-side route changes read `user`/`isLoading`
+  // from this already-resolved state instead of re-checking the session.
   useEffect(() => {
     checkAuth();
     // eslint-disable-next-line react-hooks/exhaustive-deps

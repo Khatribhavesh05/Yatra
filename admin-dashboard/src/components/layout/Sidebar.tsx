@@ -82,7 +82,7 @@ export default function Sidebar() {
         ) : (
           <div className="flex items-center justify-between w-full overflow-hidden">
             <div className="flex items-center gap-3">
-              <YatraLogo variant="full" height={32} />
+              <YatraLogo variant="full-dark" height={32} />
             </div>
             <span className="text-[10px] font-bold tracking-widest px-2 py-0.5 rounded bg-teal-500/10 text-teal-400 border border-teal-500/20 uppercase shrink-0">
               {isAdmin ? 'ADMIN' : user?.department_name || 'DEPT'}

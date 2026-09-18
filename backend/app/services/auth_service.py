@@ -20,11 +20,12 @@ async def authenticate_user(db: AsyncSession, email: str, password: str) -> User
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account is deactivated")
 
-    # Update last_login_at
+    # Update last_login_at. Not committed here: the caller (login route) commits
+    # once at the end, after also writing the audit log entry, so this update
+    # and the audit insert share a single round trip instead of two.
     await db.execute(
         update(User).where(User.id == user.id).values(last_login_at=datetime.now(timezone.utc))
     )
-    await db.commit()
     return user
 
 

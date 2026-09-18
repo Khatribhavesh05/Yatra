@@ -255,15 +255,23 @@ export default function Analytics() {
               Active Alerts Distribution by Type
             </h3>
             <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData.alertsTypeData} layout="vertical" margin={{ left: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
-                  <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11, fill: '#475569' }} allowDecimals={false} />
-                  <YAxis dataKey="name" type="category" stroke="#64748b" tick={{ fontSize: 11, fill: '#475569' }} width={140} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="value" fill="#D97706" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              {chartData.alertsTypeData.length === 0 ? (
+                <EmptyState
+                  title="No Active Alerts"
+                  description="Alert type distribution will populate once active alerts are recorded."
+                  icon="notifications_off"
+                />
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData.alertsTypeData} layout="vertical" margin={{ left: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" horizontal={false} />
+                    <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11, fill: '#475569' }} allowDecimals={false} />
+                    <YAxis dataKey="name" type="category" stroke="#64748b" tick={{ fontSize: 11, fill: '#475569' }} width={140} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="value" fill="#D97706" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 

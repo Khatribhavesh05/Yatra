@@ -21,7 +21,7 @@ export default function Departments() {
 
   const { data: vehicles = [] } = useQuery({
     queryKey: [QUERY_KEYS.VEHICLES],
-    queryFn: () => getVehicles(1000, 0),
+    queryFn: () => getVehicles(500, 0),
   });
 
   const createMutation = useMutation({

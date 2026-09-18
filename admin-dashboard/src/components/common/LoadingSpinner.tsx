@@ -1,5 +1,5 @@
 import React from 'react';
-import YatraLogo from './YatraLogo';
+import yatraLogoMarkImg from '../../assets/yatra_logo_mark.png';
 
 export interface LoadingSpinnerProps {
   message?: string;
@@ -14,19 +14,19 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   const sizeConfig = {
     sm: {
-      logoHeight: 28,
+      logoHeight: 48,
       containerPadding: 'p-4',
       textSize: 'text-xs',
       glowSize: 'w-24 h-24',
     },
     md: {
-      logoHeight: 40,
+      logoHeight: 64,
       containerPadding: 'p-8',
       textSize: 'text-sm',
       glowSize: 'w-40 h-40',
     },
     lg: {
-      logoHeight: 56,
+      logoHeight: 80,
       containerPadding: 'p-12',
       textSize: 'text-base',
       glowSize: 'w-56 h-56',
@@ -48,9 +48,14 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           className={`absolute rounded-full bg-gradient-to-r from-teal-500/25 via-cyan-500/20 to-blue-500/15 blur-2xl animate-pulse ${current.glowSize} pointer-events-none`}
         />
 
-        {/* Yatra Logo */}
+        {/* Yatra Logo Mark Image */}
         <div className="relative z-10 animate-[pulse_2s_ease-in-out_infinite]">
-          <YatraLogo variant="icon" height={current.logoHeight} />
+          <img
+            src={yatraLogoMarkImg}
+            alt="Yatra Loading"
+            style={{ width: `${current.logoHeight}px`, height: `${current.logoHeight}px` }}
+            className="object-contain drop-shadow-xl"
+          />
         </div>
       </div>
 

@@ -6,8 +6,9 @@ from app.core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from app.core.database import engine, warm_pool
+    await warm_pool()
     yield
-    from app.core.database import engine
     await engine.dispose()
 
 
@@ -49,4 +50,4 @@ app.include_router(ws_public_router)
 
 @app.get("/health", tags=["health"])
 async def health_check():
-    return {"status": "healthy", "service": "chargeease-backend"}
+    return {"status": "healthy", "service": "yatra-backend"}

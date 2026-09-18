@@ -1,5 +1,38 @@
-<svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="40" height="40" rx="10" fill="#0D9488"/>
-  <path d="M12 10L20 22V30M28 10L20 22" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="30" cy="12" r="3" fill="#2DD4BF"/>
+<svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="yatra_bg_grad" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0f172a" />
+      <stop offset="100%" stopColor="#0f5132" />
+    </linearGradient>
+    <linearGradient id="yatra_road_grad" x1="10" y1="90" x2="85" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0f5132" />
+      <stop offset="50%" stopColor="#0d9488" />
+      <stop offset="100%" stopColor="#10b981" />
+    </linearGradient>
+    <linearGradient id="yatra_leaf_grad" x1="50" y1="10" x2="90" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#34d399" />
+      <stop offset="100%" stopColor="#0d9488" />
+    </linearGradient>
+  </defs>
+
+  <rect width="100" height="100" rx="22" fill="url(#yatra_bg_grad)" />
+
+  <path d="M 16 86 C 22 66, 38 52, 48 44 C 62 33, 76 30, 88 33 C 78 46, 62 52, 48 60 C 38 67, 30 76, 26 86 Z" fill="url(#yatra_road_grad)" />
+  <path d="M 32 46 C 22 36, 15 25, 12 16 C 20 20, 31 28, 42 40 Z" fill="#0d9488" />
+  <path d="M 21 82 C 30 68, 43 55, 51 47 C 62 38, 73 35, 82 35" stroke="#ffffff" stroke-width="2.2" stroke-dasharray="4 3" stroke-linecap="round" opacity="0.85" />
+  <path d="M 50 42 C 54 24, 69 11, 86 9 C 88 26, 75 40, 56 45 Z" fill="url(#yatra_leaf_grad)" />
+  <path d="M 54 40 C 64 28, 74 20, 83 11" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" opacity="0.9" />
+
+  <g transform="translate(34, 41) scale(0.72)">
+    <rect x="0" y="0" width="34" height="20" rx="4" fill="#ffffff" />
+    <rect x="3" y="3" width="8" height="7" rx="1.5" fill="#0f172a" />
+    <rect x="13" y="3" width="7" height="7" rx="1" fill="#0f172a" />
+    <rect x="22" y="3" width="8" height="7" rx="1" fill="#0f172a" />
+    <circle cx="2" cy="14" r="1.5" fill="#2dd4bf" />
+    <circle cx="8" cy="20" r="3.5" fill="#0f172a" />
+    <circle cx="8" cy="20" r="1.5" fill="#94a3b8" />
+    <circle cx="26" cy="20" r="3.5" fill="#0f172a" />
+    <circle cx="26" cy="20" r="1.5" fill="#94a3b8" />
+    <path d="M 16 11 L 18.5 11 L 16 15 L 17.5 15 L 14.5 18.5 L 15.5 14.5 L 14 14.5 Z" fill="#10b981" />
+  </g>
 </svg>

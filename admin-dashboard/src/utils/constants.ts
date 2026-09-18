@@ -34,6 +34,7 @@ export const QUERY_KEYS = {
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'ce_access_token',
   REFRESH_TOKEN: 'ce_refresh_token',
+  CACHED_USER: 'ce_cached_user',
 } as const;
 
 export const DEFAULT_PAGE_SIZE = 50;

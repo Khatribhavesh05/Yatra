@@ -1,9 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Loader2, Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
-import loginDesignImg from '../assets/yatra_login_design.jpg';
+import {
+  Loader2,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  ArrowRight,
+  Bus,
+  Zap,
+  BarChart3,
+  Leaf,
+  Users,
+  TrendingUp,
+  Landmark,
+  Sparkles
+} from 'lucide-react';
+import yatraLoginBg from '../assets/yatra_login_bg.jpg';
 import rajasthanWatermark from '../assets/rajasthan_watermark.png';
+import yatraLogoMarkImg from '../assets/yatra_logo_mark.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -31,64 +48,175 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.detail || err.message || 'Authentication failed. Please verify credentials.');
+      setError(
+        err.response?.data?.detail || err.message || 'Authentication failed. Please verify credentials.'
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#c8deec] flex items-center justify-center p-0 lg:p-4 font-sans select-none overflow-x-hidden">
-      {/* Background artwork composition container strictly matching 1024:682 aspect ratio */}
+    <div className="min-h-screen w-full relative flex flex-col justify-between p-3 sm:p-5 lg:p-7 font-sans select-none overflow-x-hidden bg-slate-900">
+      {/* Background Scenery Image with subtle gradient protection */}
       <div
-        className="relative w-full max-w-[1280px] max-h-[96vh] aspect-[1024/682] bg-contain bg-center bg-no-repeat shadow-2xl overflow-hidden rounded-none lg:rounded-2xl"
-        style={{ backgroundImage: `url(${loginDesignImg})` }}
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700"
+        style={{ backgroundImage: `url(${yatraLoginBg})` }}
       >
-        {/* Interactive Form Card Overlay:
-            On desktop (lg+), perfectly overlays the exact card area in yatra_login_design.jpg
-            (bounds: left 56.2%, top 9.5%, width 40.0%, height 67.5%)
-            On smaller screens (< lg), renders as an elegant centered responsive card.
-        */}
-        <div className="lg:absolute lg:left-[56.2%] lg:top-[9.5%] lg:w-[40.0%] lg:h-[67.5%] w-full h-full flex items-center justify-center p-4 lg:p-0 z-20">
-          <div className="w-full max-w-md lg:max-w-none h-full bg-white rounded-[22px] xl:rounded-[26px] p-5 xl:p-6 shadow-2xl lg:shadow-none flex flex-col justify-between border border-white/60">
-            
-            {/* Top Row: Pill Badge + Rajasthan Map Watermark */}
-            <div className="flex items-start justify-between">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eef8f5] border border-teal-200/80 text-[10px] font-extrabold uppercase tracking-wider text-teal-800">
-                <ShieldCheck className="w-3.5 h-3.5 text-teal-700" />
-                <span>State EV Command Console</span>
+        {/* Soft gradient overlay for text readability without obscuring scenery */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-slate-900/40 to-slate-950/65 backdrop-contrast-[1.05]" />
+      </div>
+
+      {/* TOP HEADER: Government Branding & State Tagline */}
+      <header className="relative z-10 w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-white/15">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center p-1.5 shadow-md border border-white/60">
+            <Landmark className="w-5 h-5 text-emerald-800" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs sm:text-sm font-extrabold text-white tracking-wide">
+                Government of Rajasthan
+              </span>
+              <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-700/80 text-emerald-100 border border-emerald-400/30">
+                राजस्थान सरकार
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-xs font-medium text-slate-200/90 tracking-tight">
+              Department of Transport & Energy
+            </p>
+          </div>
+        </div>
+
+        <div className="hidden md:flex items-center gap-2 bg-slate-900/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/20 text-xs font-medium text-slate-100">
+          <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Sustainable Mobility for a Better Rajasthan</span>
+        </div>
+      </header>
+
+      {/* MAIN CONTENT AREA: Left Hero Branding + Right Floating Sign-In Card */}
+      <main className="relative z-10 w-full max-w-7xl mx-auto my-auto py-6 sm:py-8 lg:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* LEFT COLUMN: Yatra Brand, Heading & 4 Feature Badges */}
+        <div className="lg:col-span-7 flex flex-col justify-center space-y-6 text-white pr-0 lg:pr-6">
+          {/* Main Logo & Platform Badge */}
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/80 border border-emerald-500/40 backdrop-blur-md text-[11px] font-bold uppercase tracking-widest text-emerald-300">
+              <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Rajasthan EV Fleet Intelligence Platform</span>
+            </div>
+
+            <div className="pt-2 flex items-center gap-5">
+              <img
+                src={yatraLogoMarkImg}
+                alt="Yatra Emblem"
+                className="w-24 h-24 sm:w-28 sm:h-28 object-contain drop-shadow-2xl flex-shrink-0 transition-transform hover:scale-105 duration-300"
+              />
+              <div>
+                <div className="flex items-baseline gap-3">
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white drop-shadow-md">
+                    YATRA
+                  </h1>
+                  <span className="text-xs sm:text-sm font-bold tracking-widest text-emerald-400 uppercase">
+                    स्मार्ट गतिशील राजस्थान
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold text-emerald-200/90 tracking-wider uppercase mt-0.5">
+                  Smart Mobility | Cleaner Rajasthan
+                </p>
               </div>
-              <div className="w-16 h-12 relative -mt-1 -mr-1 flex items-center justify-center">
+            </div>
+          </div>
+
+          {/* Hero Heading & Subtitle */}
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-snug drop-shadow-lg">
+              Greener Roads,<br className="hidden sm:inline" /> Brighter Rajasthan
+            </h2>
+            <p className="text-xs sm:text-sm lg:text-base text-slate-200/90 max-w-xl font-normal leading-relaxed">
+              Real-time intelligence and state-wide command console for a cleaner, smarter, and more connected electric bus fleet across Rajasthan.
+            </p>
+          </div>
+
+          {/* 4 Feature Badges Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+            <div className="bg-slate-900/60 backdrop-blur-md border border-white/15 rounded-xl p-3 flex flex-col items-center text-center shadow-lg hover:border-emerald-400/50 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-1.5 text-emerald-300">
+                <Bus className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-bold text-white leading-snug">
+                Live Fleet Tracking
+              </span>
+            </div>
+
+            <div className="bg-slate-900/60 backdrop-blur-md border border-white/15 rounded-xl p-3 flex flex-col items-center text-center shadow-lg hover:border-emerald-400/50 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-1.5 text-emerald-300">
+                <Zap className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-bold text-white leading-snug">
+                Smart Charging Network
+              </span>
+            </div>
+
+            <div className="bg-slate-900/60 backdrop-blur-md border border-white/15 rounded-xl p-3 flex flex-col items-center text-center shadow-lg hover:border-emerald-400/50 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-1.5 text-emerald-300">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-bold text-white leading-snug">
+                Secure Officer Access
+              </span>
+            </div>
+
+            <div className="bg-slate-900/60 backdrop-blur-md border border-white/15 rounded-xl p-3 flex flex-col items-center text-center shadow-lg hover:border-emerald-400/50 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center mb-1.5 text-emerald-300">
+                <BarChart3 className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-bold text-white leading-snug">
+                Data-Driven Ops
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Floating Sign-In Card */}
+        <div className="lg:col-span-5 w-full flex justify-center lg:justify-end">
+          <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-6 sm:p-7 shadow-2xl border border-white/80 flex flex-col justify-between space-y-5">
+            {/* Top Row: State Badge + Rajasthan Watermark */}
+            <div className="flex items-start justify-between">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-extrabold uppercase tracking-wider text-emerald-900">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                <span>STATE EV COMMAND CONSOLE</span>
+              </div>
+              <div className="w-14 h-10 relative flex items-center justify-center opacity-85">
                 <img
                   src={rajasthanWatermark}
                   alt="Rajasthan India"
-                  className="w-full h-full object-contain pointer-events-none select-none opacity-90"
+                  className="w-full h-full object-contain pointer-events-none select-none"
                 />
               </div>
             </div>
 
             {/* Title & Subtitle */}
-            <div className="-mt-1">
-              <h2 className="text-xl xl:text-[22px] font-black text-slate-900 tracking-tight leading-snug">
+            <div>
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
                 Officer Portal Sign In
-              </h2>
-              <p className="text-[11px] xl:text-xs text-slate-500 mt-1 leading-normal font-medium">
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 leading-normal font-medium">
                 Enter your authorized credentials to access the Yatra EV Fleet Operations Platform.
               </p>
             </div>
 
-            {/* Error message display */}
+            {/* Error Message Alert */}
             {error && (
-              <div className="py-2 px-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
+              <div className="py-2.5 px-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold flex items-center gap-2">
                 <span className="material-symbols-outlined text-base text-rose-600">error</span>
                 <span className="truncate">{error}</span>
               </div>
             )}
 
-            {/* Functional Authentication Form */}
-            <form onSubmit={handleSubmit} className="space-y-3 xl:space-y-3.5 my-auto">
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Official Email
                 </label>
                 <div className="relative flex items-center">
@@ -99,13 +227,13 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@yatra.dev"
                     required
-                    className="w-full h-10 xl:h-11 bg-slate-50/90 border border-slate-200 rounded-xl pl-10 pr-4 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all select-text"
+                    className="w-full h-11 bg-slate-50/90 border border-slate-200 rounded-xl pl-10 pr-4 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all select-text"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-800 mb-1">
+                <label className="block text-xs font-bold text-slate-800 mb-1">
                   Password
                 </label>
                 <div className="relative flex items-center">
@@ -116,7 +244,7 @@ export default function Login() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full h-10 xl:h-11 bg-slate-50/90 border border-slate-200 rounded-xl pl-10 pr-10 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all select-text"
+                    className="w-full h-11 bg-slate-50/90 border border-slate-200 rounded-xl pl-10 pr-10 text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 transition-all select-text"
                   />
                   <button
                     type="button"
@@ -134,14 +262,17 @@ export default function Login() {
                     type="checkbox"
                     checked={keepSignedIn}
                     onChange={(e) => setKeepSignedIn(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-slate-300 text-teal-600 focus:ring-teal-500/20 accent-teal-600"
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/20 accent-emerald-600"
                   />
-                  <span className="text-[11px] font-medium text-slate-700">Keep me signed in</span>
+                  <span className="text-xs font-medium text-slate-700">Keep me signed in</span>
                 </label>
                 <a
                   href="#forgot"
-                  onClick={(e) => { e.preventDefault(); alert('Please contact Platform Admin for password reset.'); }}
-                  className="text-[11px] font-bold text-teal-700 hover:text-teal-800 transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert('Please contact Platform Admin for password reset.');
+                  }}
+                  className="text-xs font-bold text-emerald-700 hover:text-emerald-800 transition-colors"
                 >
                   Forgot password?
                 </a>
@@ -150,7 +281,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 xl:h-12 bg-gradient-to-r from-[#036b76] via-[#008172] to-[#109f6e] hover:brightness-105 active:scale-[0.99] text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-teal-800/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full h-12 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 hover:brightness-105 active:scale-[0.99] text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -166,38 +297,55 @@ export default function Login() {
               </button>
             </form>
 
-            <p className="text-[10px] text-slate-400 text-center font-medium my-1">
-              Authorized personnel only. All access is logged and audited.
+            <p className="text-[10px] text-slate-400 text-center font-medium">
+              Authorized personnel only. All access is logged and audited under Rajasthan IT guidelines.
             </p>
 
-            {/* Bottom Card Metrics: 4 columns matching reference image */}
+            {/* Bottom Card Metrics */}
             <div className="grid grid-cols-4 gap-1 pt-3 border-t border-slate-100 text-center">
               <div className="flex flex-col items-center justify-center py-1">
-                <span className="material-symbols-outlined text-teal-700 text-base">directions_bus</span>
-                <div className="text-[10px] font-extrabold text-slate-900 mt-0.5 leading-none">0+</div>
-                <div className="text-[9px] text-slate-500 font-medium leading-tight">EV Buses</div>
+                <Bus className="w-4 h-4 text-emerald-700 mb-0.5" />
+                <div className="text-xs font-extrabold text-slate-900 leading-none">0+</div>
+                <div className="text-[9px] text-slate-500 font-semibold mt-0.5">EV Buses</div>
               </div>
               <div className="flex flex-col items-center justify-center py-1 border-l border-slate-100">
-                <span className="material-symbols-outlined text-teal-700 text-base">eco</span>
-                <div className="text-[10px] font-extrabold text-slate-900 mt-0.5 leading-none">Cleaner</div>
-                <div className="text-[9px] text-slate-500 font-medium leading-tight">Cities</div>
+                <Leaf className="w-4 h-4 text-emerald-700 mb-0.5" />
+                <div className="text-xs font-extrabold text-slate-900 leading-none">Cleaner</div>
+                <div className="text-[9px] text-slate-500 font-semibold mt-0.5">Cities</div>
               </div>
               <div className="flex flex-col items-center justify-center py-1 border-l border-slate-100">
-                <span className="material-symbols-outlined text-teal-700 text-base">groups</span>
-                <div className="text-[10px] font-extrabold text-slate-900 mt-0.5 leading-none">Greener</div>
-                <div className="text-[9px] text-slate-500 font-medium leading-tight">Rajasthan</div>
+                <Users className="w-4 h-4 text-emerald-700 mb-0.5" />
+                <div className="text-xs font-extrabold text-slate-900 leading-none">Greener</div>
+                <div className="text-[9px] text-slate-500 font-semibold mt-0.5">Rajasthan</div>
               </div>
               <div className="flex flex-col items-center justify-center py-1 border-l border-slate-100">
-                <span className="material-symbols-outlined text-teal-700 text-base">trending_up</span>
-                <div className="text-[10px] font-extrabold text-slate-900 mt-0.5 leading-none">Sustainable</div>
-                <div className="text-[9px] text-slate-500 font-medium leading-tight">Future</div>
+                <TrendingUp className="w-4 h-4 text-emerald-700 mb-0.5" />
+                <div className="text-xs font-extrabold text-slate-900 leading-none">Sustainable</div>
+                <div className="text-[9px] text-slate-500 font-semibold mt-0.5">Future</div>
               </div>
             </div>
-
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* BOTTOM FOOTER: Eco Line & Rajasthan Hindi Slogan */}
+      <footer className="relative z-10 w-full flex flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t border-white/15 text-slate-200">
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          <Leaf className="w-4 h-4 text-emerald-400" />
+          <span>Swachh Parivahan | Samriddh Rajasthan</span>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-center sm:text-right">
+          <span className="text-xs sm:text-sm font-bold text-emerald-300 tracking-wide font-serif italic">
+            "चलो, एक हरित राजस्थान की ओर"
+          </span>
+          <span className="text-[10px] text-slate-300 font-medium tracking-wider uppercase">
+            YATRA | EV Fleet Operations Platform • PEOPLE | PLANET | PROGRESS
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
+
 

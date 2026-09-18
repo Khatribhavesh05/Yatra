@@ -17,6 +17,7 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     await log_action(
         db, actor_id=user.id, action="user_login", object_type="user", object_id=user.id
     )
+    await db.commit()
     return generate_tokens(user)
 
 
