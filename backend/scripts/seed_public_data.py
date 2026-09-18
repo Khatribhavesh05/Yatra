@@ -1,4 +1,5 @@
 import asyncio
+import random
 import uuid
 import sys
 import os
@@ -16,7 +17,7 @@ from app.models.route_stop import RouteStop
 from app.models.help_contact import HelpContact
 from app.models.vehicle import Vehicle, VehicleType
 from app.models.vehicle_route import VehicleRoute
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 async def seed():
     print("[*] Ensuring database tables exist in Neon PostgreSQL...")
@@ -27,13 +28,19 @@ async def seed():
     async with AsyncSessionLocal() as db:
         print("[*] Seeding Bikaner & Rajasthan EV Intelligence Data...")
 
+        # 0. Purge stale Delhi contamination from earlier seed runs (Delhi is not
+        # part of this platform's scope; only Bikaner/Jaipur/Jodhpur/Udaipur are).
+        removed = await db.execute(delete(City).where(City.name == "Delhi", City.state == "Delhi"))
+        await db.commit()
+        if removed.rowcount:
+            print(f"[+] Removed {removed.rowcount} stale Delhi city row(s).")
+
         # 1. Seed Cities
         cities_data = [
             {"name": "Bikaner", "state": "Rajasthan", "latitude": 28.0229, "longitude": 73.3119},
             {"name": "Jaipur", "state": "Rajasthan", "latitude": 26.9124, "longitude": 75.7873},
             {"name": "Jodhpur", "state": "Rajasthan", "latitude": 26.2389, "longitude": 73.0243},
             {"name": "Udaipur", "state": "Rajasthan", "latitude": 24.5854, "longitude": 73.7125},
-            {"name": "Delhi", "state": "Delhi", "latitude": 28.7041, "longitude": 77.1025},
         ]
         
         for c_data in cities_data:
@@ -347,6 +354,7 @@ async def seed():
 
         # 5. Seed Public Transit Department & Electric Buses
         from app.models.department import Department
+        from app.models.device import Device
         from app.models.telemetry import TelemetryLatest
 
         dept_query = await db.execute(select(Department).where(Department.code == "TRANSIT_BKN"))
@@ -402,12 +410,27 @@ async def seed():
                 db.add(v_obj)
                 await db.flush()
 
+            # Device (required FK for TelemetryLatest)
+            d_res = await db.execute(select(Device).where(Device.vehicle_id == v_obj.id))
+            d_obj = d_res.scalar_one_or_none()
+            if not d_obj:
+                d_obj = Device(
+                    device_code=f"DEV-{b['code']}",
+                    vehicle_id=v_obj.id,
+                )
+                db.add(d_obj)
+                await db.flush()
+
             # Telemetry Latest
             t_res = await db.execute(select(TelemetryLatest).where(TelemetryLatest.vehicle_id == v_obj.id))
             t_obj = t_res.scalar_one_or_none()
+            now = datetime.now(timezone.utc)
             if not t_obj:
                 t_obj = TelemetryLatest(
                     vehicle_id=v_obj.id,
+                    device_id=d_obj.id,
+                    observed_at=now,
+                    received_at=now,
                     latitude=b["lat"],
                     longitude=b["lng"],
                     speed_kph=b["speed"],
@@ -415,7 +438,6 @@ async def seed():
                     soc_pct=b["soc"],
                     charging=False,
                     connectivity_status="online",
-                    last_seen=datetime.now(timezone.utc)
                 )
                 db.add(t_obj)
             else:
@@ -424,7 +446,8 @@ async def seed():
                 t_obj.speed_kph = b["speed"]
                 t_obj.heading_deg = b["heading"]
                 t_obj.soc_pct = b["soc"]
-                t_obj.last_seen = datetime.now(timezone.utc)
+                t_obj.observed_at = now
+                t_obj.received_at = now
 
             # Link Route
             r_query = await db.execute(select(Route).where(Route.code == b["route_code"]))
@@ -446,6 +469,153 @@ async def seed():
 
         await db.commit()
         print("[+] Seeded Public Transit Electric Buses and Route Assignments.")
+
+        # 5b. Seed the full Rajasthan-wide simulator fleet (matches simulator/config.py
+        # VEHICLES exactly, so simulated telemetry from Jaipur/Jodhpur/Udaipur/Bikaner
+        # is never rejected as an "unknown vehicle").
+        from simulator.config import VEHICLES as SIM_VEHICLES
+        from simulator.routes import ROUTES as SIM_ROUTES
+
+        DEPARTMENT_META = {
+            "Bikaner Transport": {
+                "code": "BIKANER_TRANSPORT",
+                "description": "Bikaner Municipal Corporation electric city-bus fleet.",
+            },
+            "Bikaner Fire Service": {
+                "code": "BIKANER_FIRE",
+                "description": "Bikaner Fire & Emergency Services electric response fleet.",
+            },
+            "Bikaner Utilities": {
+                "code": "BIKANER_UTILITIES",
+                "description": "Bikaner Municipal Corporation electric utility and maintenance fleet.",
+            },
+            "Jaipur Transport": {
+                "code": "JAIPUR_TRANSPORT",
+                "description": "Jaipur City Transport Services Ltd. electric bus fleet.",
+            },
+            "Jaipur Fire Service": {
+                "code": "JAIPUR_FIRE",
+                "description": "Jaipur Fire & Emergency Services electric response fleet.",
+            },
+            "Jodhpur Transport": {
+                "code": "JODHPUR_TRANSPORT",
+                "description": "Jodhpur City Transport Services electric bus fleet.",
+            },
+            "Jodhpur Utilities": {
+                "code": "JODHPUR_UTILITIES",
+                "description": "Jodhpur Municipal Corporation electric utility fleet.",
+            },
+            "Udaipur Transport": {
+                "code": "UDAIPUR_TRANSPORT",
+                "description": "Udaipur City Transport Services electric bus fleet.",
+            },
+            "Udaipur Fire Service": {
+                "code": "UDAIPUR_FIRE",
+                "description": "Udaipur Fire & Emergency Services electric response fleet.",
+            },
+        }
+
+        RTO_CODE = {
+            "Bikaner": "RJ07",
+            "Jaipur": "RJ14",
+            "Jodhpur": "RJ19",
+            "Udaipur": "RJ27",
+        }
+
+        MAKE_MODEL_BY_TYPE = {
+            "electric_bus": [
+                ("Olectra", "K9 E-Bus"), ("Tata Motors", "Ultra EV 9m"),
+                ("JBM", "Ecolife 12m"), ("Switch Mobility", "EiV 12"),
+            ],
+            "fire_ev": [
+                ("Rosenbauer", "RT Electric Responder"), ("Tata Motors", "Fire EV Response Unit"),
+            ],
+            "utility_ev": [
+                ("Mahindra", "e-Supro Utility"), ("Tata Motors", "Ace EV Utility"),
+            ],
+        }
+
+        VEHICLE_TYPE_MAP = {
+            "electric_bus": VehicleType.ELECTRIC_BUS,
+            "fire_ev": VehicleType.FIRE_EV,
+            "utility_ev": VehicleType.UTILITY_EV,
+        }
+
+        def department_city(dept_name: str) -> str:
+            for known_city in ("Bikaner", "Jaipur", "Jodhpur", "Udaipur"):
+                if dept_name.startswith(known_city):
+                    return known_city
+            return "Bikaner"
+
+        dept_cache: dict[str, Department] = {}
+        for idx, cfg in enumerate(SIM_VEHICLES):
+            dept_obj = dept_cache.get(cfg.department)
+            if dept_obj is None:
+                meta = DEPARTMENT_META[cfg.department]
+                d_query = await db.execute(select(Department).where(Department.code == meta["code"]))
+                dept_obj = d_query.scalar_one_or_none()
+                if not dept_obj:
+                    dept_obj = Department(
+                        name=cfg.department,
+                        code=meta["code"],
+                        description=meta["description"],
+                        is_active=True,
+                    )
+                    db.add(dept_obj)
+                    await db.flush()
+                dept_cache[cfg.department] = dept_obj
+
+            v_res = await db.execute(select(Vehicle).where(Vehicle.vehicle_code == cfg.vehicle_code))
+            v_obj = v_res.scalar_one_or_none()
+            city_name = department_city(cfg.department)
+            make, model = MAKE_MODEL_BY_TYPE[cfg.vehicle_type][idx % len(MAKE_MODEL_BY_TYPE[cfg.vehicle_type])]
+            if not v_obj:
+                v_obj = Vehicle(
+                    vehicle_code=cfg.vehicle_code,
+                    registration_number=f"{RTO_CODE[city_name]}-EV-{cfg.vehicle_code.upper().replace('-', '')}",
+                    vehicle_type=VEHICLE_TYPE_MAP[cfg.vehicle_type],
+                    make=make,
+                    model=model,
+                    year=2024,
+                    department_id=dept_obj.id,
+                    is_active=True,
+                    public_visible=True,
+                )
+                db.add(v_obj)
+                await db.flush()
+
+            d_res = await db.execute(select(Device).where(Device.device_code == cfg.device_code))
+            d_obj = d_res.scalar_one_or_none()
+            if not d_obj:
+                d_obj = Device(
+                    device_code=cfg.device_code,
+                    vehicle_id=v_obj.id,
+                )
+                db.add(d_obj)
+                await db.flush()
+
+            t_res = await db.execute(select(TelemetryLatest).where(TelemetryLatest.vehicle_id == v_obj.id))
+            t_obj = t_res.scalar_one_or_none()
+            if not t_obj:
+                start_lat, start_lng = SIM_ROUTES[cfg.route_index][0]
+                now = datetime.now(timezone.utc)
+                t_obj = TelemetryLatest(
+                    vehicle_id=v_obj.id,
+                    device_id=d_obj.id,
+                    observed_at=now,
+                    received_at=now,
+                    latitude=start_lat,
+                    longitude=start_lng,
+                    speed_kph=0.0,
+                    heading_deg=0.0,
+                    soc_pct=round(random.uniform(55, 95), 1),
+                    charging=False,
+                    connectivity_status="online",
+                )
+                db.add(t_obj)
+
+        await db.commit()
+        print(f"[+] Seeded {len(SIM_VEHICLES)} simulator fleet vehicles across {len(DEPARTMENT_META)} Rajasthan departments.")
 
         # 6. Seed Help & Emergency Contacts for Bikaner
         help_contacts = [

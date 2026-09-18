@@ -10,6 +10,7 @@ from app.models.device import Device
 from app.models.vehicle import Vehicle
 from app.schemas.telemetry import TelemetryIngestPayload, TelemetryIngestResponse
 from app.core.config import settings
+from app.websocket.manager import manager
 
 
 async def process_telemetry(
@@ -112,10 +113,47 @@ async def process_telemetry(
     
     # 7. Evaluate alerts
     from app.services.alert_service import evaluate_alerts
-    await evaluate_alerts(db, vehicle, payload, flags)
-    
+    new_alerts = await evaluate_alerts(db, vehicle, payload, flags)
+
     await db.commit()
-    
+
+    # 8. Broadcast real-time updates over WebSocket (best-effort, post-commit)
+    await manager.broadcast_telemetry(
+        vehicle.department_id,
+        {
+            "vehicle_id": str(vehicle.id),
+            "vehicle_code": vehicle.vehicle_code,
+            "device_id": str(device.id),
+            "observed_at": payload.observed_at.isoformat(),
+            "latitude": payload.location.lat,
+            "longitude": payload.location.lng,
+            "accuracy_m": payload.location.accuracy_m,
+            "speed_kph": speed,
+            "heading_deg": payload.motion.heading_deg if payload.motion else None,
+            "soc_pct": soc,
+            "estimated_range_km": payload.energy.estimated_range_km if payload.energy else None,
+            "charging": payload.energy.charging if payload.energy else None,
+            "battery_temp_c": payload.diagnostics.battery_temp_c if payload.diagnostics else None,
+            "connectivity_status": "online",
+            "flags": flags if flags else None,
+        },
+    )
+
+    for alert in new_alerts:
+        await manager.broadcast_alert(
+            vehicle.department_id,
+            {
+                "id": str(alert.id),
+                "vehicle_id": str(alert.vehicle_id),
+                "vehicle_code": vehicle.vehicle_code,
+                "alert_type": alert.alert_type.value,
+                "severity": alert.severity.value,
+                "status": alert.status.value,
+                "first_seen": alert.first_seen.isoformat() if alert.first_seen else None,
+                "metadata": alert.metadata_,
+            },
+        )
+
     return TelemetryIngestResponse(
         status="accepted", event_id=payload.event_id,
         flags=flags if flags else None
