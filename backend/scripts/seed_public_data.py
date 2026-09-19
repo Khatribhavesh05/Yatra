@@ -235,6 +235,92 @@ async def seed():
         await db.commit()
         print(f"[+] Seeded {len(bikaner_stations)} Bikaner EV Charging Centers.")
 
+        # 2b. Seed EV Charging Centers for Jodhpur, Jaipur & Udaipur so the
+        # "Charging Hubs" stat is non-zero for every seeded city, not just Bikaner.
+        other_city_stations = [
+            {
+                "name": "Tata Power EZ Charge - Ratanada Circle",
+                "latitude": 26.2726, "longitude": 73.0298,
+                "address": "Ratanada Circle, Near Ratanada Palace, Jodhpur",
+                "city": "Jodhpur", "state": "Rajasthan", "pincode": "342001",
+                "status": ChargingCenterStatus.OPERATIONAL, "power_kw": 60.0,
+                "contact_phone": "+91 1800 209 5161", "operating_hours": "24/7 Open",
+                "description": "High-speed DC fast charging hub serving the Ratanada and Airport Road corridor.",
+                "connectors": {"CCS2": 2, "Type2": 2, "fast_dc": True},
+                "amenities": {
+                    "restroom": True, "cafe": True, "wifi": True, "security_24x7": True,
+                    "pricing_inr_kwh": 18.5,
+                    "image_url": "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80"
+                },
+                "public_visible": True, "last_verified_at": datetime.now(timezone.utc)
+            },
+            {
+                "name": "Statiq EV Hub - Jodhpur Airport Road",
+                "latitude": 26.2515, "longitude": 73.0491,
+                "address": "Airport Road, Near Jodhpur Airport Circle, Jodhpur",
+                "city": "Jodhpur", "state": "Rajasthan", "pincode": "342011",
+                "status": ChargingCenterStatus.OPERATIONAL, "power_kw": 120.0,
+                "contact_phone": "+91 8000 700 800", "operating_hours": "24/7 Open",
+                "description": "Ultra-fast highway-grade charging plaza for buses and private EVs near the airport.",
+                "connectors": {"CCS2": 4, "Type2": 2, "fast_dc": True},
+                "amenities": {
+                    "restroom": True, "cafe": True, "wifi": True, "pricing_inr_kwh": 19.0,
+                    "image_url": "https://images.unsplash.com/photo-1558441719-20f5b9d365dc?auto=format&fit=crop&w=800&q=80"
+                },
+                "public_visible": True, "last_verified_at": datetime.now(timezone.utc)
+            },
+            {
+                "name": "Jio-bp pulse EV Station - Sardarpura",
+                "latitude": 26.2833, "longitude": 73.0166,
+                "address": "Sardarpura Main Road, Jodhpur",
+                "city": "Jodhpur", "state": "Rajasthan", "pincode": "342003",
+                "status": ChargingCenterStatus.OPERATIONAL, "power_kw": 50.0,
+                "contact_phone": "+91 1800 891 9023", "operating_hours": "06:00 AM - 11:00 PM",
+                "description": "Central city charging point steps from Sardarpura's commercial and market district.",
+                "connectors": {"CCS2": 2, "Type2": 2, "fast_dc": True},
+                "amenities": {
+                    "restroom": True, "shopping_nearby": True, "pricing_inr_kwh": 17.5,
+                    "image_url": "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=800&q=80"
+                },
+                "public_visible": True, "last_verified_at": datetime.now(timezone.utc)
+            },
+            {
+                "name": "EESL EV Charging Plaza - Vidhyadhar Nagar",
+                "latitude": 26.9500, "longitude": 75.7700,
+                "address": "Vidhyadhar Nagar Sector 4, Jaipur",
+                "city": "Jaipur", "state": "Rajasthan", "pincode": "302023",
+                "status": ChargingCenterStatus.OPERATIONAL, "power_kw": 60.0,
+                "contact_phone": "+91 1800 123 4567", "operating_hours": "24/7 Open",
+                "description": "Public fast-charging plaza serving the northern Jaipur transit corridor.",
+                "connectors": {"CCS2": 2, "Type2": 2, "fast_dc": True},
+                "amenities": {"restroom": True, "wifi": True, "pricing_inr_kwh": 18.0},
+                "public_visible": True, "last_verified_at": datetime.now(timezone.utc)
+            },
+            {
+                "name": "Statiq EV Hub - Udaipur Fatehsagar Road",
+                "latitude": 24.5951, "longitude": 73.6836,
+                "address": "Fatehsagar Road, Udaipur",
+                "city": "Udaipur", "state": "Rajasthan", "pincode": "313001",
+                "status": ChargingCenterStatus.OPERATIONAL, "power_kw": 60.0,
+                "contact_phone": "+91 8000 700 800", "operating_hours": "24/7 Open",
+                "description": "Lakeside charging hub supporting Udaipur's electric city-bus fleet.",
+                "connectors": {"CCS2": 2, "Type2": 2, "fast_dc": True},
+                "amenities": {"restroom": True, "cafe": True, "pricing_inr_kwh": 18.5},
+                "public_visible": True, "last_verified_at": datetime.now(timezone.utc)
+            },
+        ]
+
+        for cc in other_city_stations:
+            existing = await db.execute(select(ChargingCenter).where(ChargingCenter.name == cc["name"]))
+            center_obj = existing.scalar_one_or_none()
+            if not center_obj:
+                db.add(ChargingCenter(**cc))
+            else:
+                for k, v in cc.items():
+                    setattr(center_obj, k, v)
+        await db.commit()
+        print(f"[+] Seeded {len(other_city_stations)} Jodhpur/Jaipur/Udaipur EV Charging Centers.")
+
         # 3. Seed Bikaner Major Bus Stops
         bikaner_stops_data = [
             {"name": "Beechwal RIICO Hub", "code": "BCH-01", "latitude": 28.0812, "longitude": 73.3754, "city": "Bikaner", "state": "Rajasthan", "address": "NH-15 Beechwal Industrial Area"},
@@ -267,7 +353,7 @@ async def seed():
         await db.commit()
         print(f"[+] Seeded {len(bikaner_stops_data)} Bikaner Bus Stops.")
 
-        # 4. Seed Bikaner Transit Routes (Where Is My Urja)
+        # 4. Seed Bikaner Transit Routes (Where Is My Bus)
         routes_data = [
             {
                 "name": "Line 1 (Red E-Line): Beechwal RIICO ⇄ Ganga Shahar",
@@ -320,6 +406,7 @@ async def seed():
             }
         ]
 
+        bikaner_routes_map: dict[str, Route] = {}
         for r_info in routes_data:
             existing = await db.execute(select(Route).where(Route.code == r_info["code"]))
             route_obj = existing.scalar_one_or_none()
@@ -334,6 +421,7 @@ async def seed():
                 )
                 db.add(route_obj)
                 await db.flush()
+            bikaner_routes_map[r_info["code"]] = route_obj
 
             # Add Route Stops
             for seq, stop_name in enumerate(r_info["stops"]):
@@ -351,6 +439,120 @@ async def seed():
                         ))
         await db.commit()
         print(f"[+] Seeded {len(routes_data)} Bikaner Routes and Stop Associations.")
+
+        # 4b. Seed realistic Jodhpur (plus Jaipur & Udaipur) bus stops and transit
+        # routes. Previously only Bikaner had Route rows, so every vehicle in the
+        # other three cities showed "Route unassigned" on the public site.
+        other_city_stops_data = [
+            {"name": "Jodhpur Railway Station", "code": "JDH-RLY", "latitude": 26.2870, "longitude": 73.0243, "city": "Jodhpur", "state": "Rajasthan", "address": "Station Road, Jodhpur"},
+            {"name": "Ghantaghar Clock Tower & Sardar Market", "code": "JDH-01", "latitude": 26.2919, "longitude": 73.0290, "city": "Jodhpur", "state": "Rajasthan", "address": "Sardar Market, Old City, Jodhpur"},
+            {"name": "Mehrangarh Fort Gate", "code": "JDH-02", "latitude": 26.2979, "longitude": 73.0181, "city": "Jodhpur", "state": "Rajasthan", "address": "Fort Road, Jodhpur"},
+            {"name": "Umaid Bhawan Circle", "code": "JDH-03", "latitude": 26.2892, "longitude": 73.0439, "city": "Jodhpur", "state": "Rajasthan", "address": "Circuit House Road, Jodhpur"},
+            {"name": "Ratanada Circle", "code": "JDH-04", "latitude": 26.2726, "longitude": 73.0298, "city": "Jodhpur", "state": "Rajasthan", "address": "Ratanada, Jodhpur"},
+            {"name": "Jodhpur Airport Circle", "code": "JDH-05", "latitude": 26.2515, "longitude": 73.0491, "city": "Jodhpur", "state": "Rajasthan", "address": "Airport Road, Jodhpur"},
+            {"name": "Paota Circle", "code": "JDH-06", "latitude": 26.3020, "longitude": 73.0389, "city": "Jodhpur", "state": "Rajasthan", "address": "Paota, Jodhpur"},
+            {"name": "Sardarpura Main Road", "code": "JDH-07", "latitude": 26.2833, "longitude": 73.0166, "city": "Jodhpur", "state": "Rajasthan", "address": "Sardarpura, Jodhpur"},
+            {"name": "AIIMS Jodhpur Gate", "code": "JDH-08", "latitude": 26.2611, "longitude": 73.0119, "city": "Jodhpur", "state": "Rajasthan", "address": "Basni Industrial Area, Jodhpur"},
+            {"name": "Chopasni Housing Board", "code": "JDH-09", "latitude": 26.3011, "longitude": 73.0083, "city": "Jodhpur", "state": "Rajasthan", "address": "Chopasni Housing Board, Jodhpur"},
+
+            {"name": "Jaipur Junction Railway Station", "code": "JAI-RLY", "latitude": 26.9196, "longitude": 75.7878, "city": "Jaipur", "state": "Rajasthan", "address": "Station Road, Jaipur"},
+            {"name": "Hawa Mahal Circle", "code": "JAI-01", "latitude": 26.9239, "longitude": 75.8267, "city": "Jaipur", "state": "Rajasthan", "address": "Badi Chaupad, Jaipur"},
+            {"name": "Malviya Nagar Bus Stand", "code": "JAI-02", "latitude": 26.8506, "longitude": 75.8064, "city": "Jaipur", "state": "Rajasthan", "address": "Malviya Nagar, Jaipur"},
+            {"name": "Vidhyadhar Nagar Sector 4", "code": "JAI-03", "latitude": 26.9500, "longitude": 75.7700, "city": "Jaipur", "state": "Rajasthan", "address": "Vidhyadhar Nagar, Jaipur"},
+
+            {"name": "Udaipur City Railway Station", "code": "UDR-RLY", "latitude": 24.5804, "longitude": 73.6862, "city": "Udaipur", "state": "Rajasthan", "address": "Station Road, Udaipur"},
+            {"name": "Fatehsagar Lake Circle", "code": "UDR-01", "latitude": 24.5951, "longitude": 73.6836, "city": "Udaipur", "state": "Rajasthan", "address": "Fatehsagar Road, Udaipur"},
+            {"name": "City Palace Gate", "code": "UDR-02", "latitude": 24.5764, "longitude": 73.6835, "city": "Udaipur", "state": "Rajasthan", "address": "City Palace Road, Udaipur"},
+        ]
+
+        for s_data in other_city_stops_data:
+            existing = await db.execute(select(Stop).where(Stop.name == s_data["name"]))
+            stop_obj = existing.scalar_one_or_none()
+            if not stop_obj:
+                stop_obj = Stop(**s_data)
+                db.add(stop_obj)
+                await db.flush()
+            stops_map[s_data["name"]] = stop_obj
+        await db.commit()
+        print(f"[+] Seeded {len(other_city_stops_data)} Jodhpur/Jaipur/Udaipur Bus Stops.")
+
+        other_routes_data = [
+            {
+                "name": "Line 1 (Blue E-Line): Railway Station ⇄ Mehrangarh Fort",
+                "code": "JDH-L1", "city": "Jodhpur", "state": "Rajasthan",
+                "description": "Heritage corridor linking Jodhpur Railway Station, Ghantaghar Clock Tower, and Mehrangarh Fort.",
+                "color": "#2563eb",
+                "stops": ["Jodhpur Railway Station", "Ghantaghar Clock Tower & Sardar Market", "Mehrangarh Fort Gate"]
+            },
+            {
+                "name": "Line 2 (Green E-Line): Ratanada ⇄ AIIMS Jodhpur",
+                "code": "JDH-L2", "city": "Jodhpur", "state": "Rajasthan",
+                "description": "Connecting Ratanada, Umaid Bhawan Circle, Sardarpura, Airport Road, and AIIMS Jodhpur.",
+                "color": "#10b981",
+                "stops": ["Ratanada Circle", "Umaid Bhawan Circle", "Sardarpura Main Road", "Jodhpur Airport Circle", "AIIMS Jodhpur Gate"]
+            },
+            {
+                "name": "Line 3 (Amber E-Line): Paota ⇄ Chopasni Housing Board",
+                "code": "JDH-L3", "city": "Jodhpur", "state": "Rajasthan",
+                "description": "North Jodhpur corridor linking Paota Circle and Chopasni Housing Board.",
+                "color": "#f59e0b",
+                "stops": ["Paota Circle", "Chopasni Housing Board"]
+            },
+            {
+                "name": "Line 1 (Pink E-Line): Railway Station ⇄ Hawa Mahal",
+                "code": "JAI-L1", "city": "Jaipur", "state": "Rajasthan",
+                "description": "Central Jaipur corridor linking the railway junction with the Walled City.",
+                "color": "#ec4899",
+                "stops": ["Jaipur Junction Railway Station", "Hawa Mahal Circle"]
+            },
+            {
+                "name": "Line 2 (Amber E-Line): Malviya Nagar ⇄ Vidhyadhar Nagar",
+                "code": "JAI-L2", "city": "Jaipur", "state": "Rajasthan",
+                "description": "South-to-north corridor across Jaipur's Malviya Nagar and Vidhyadhar Nagar sectors.",
+                "color": "#f59e0b",
+                "stops": ["Malviya Nagar Bus Stand", "Vidhyadhar Nagar Sector 4"]
+            },
+            {
+                "name": "Line 1 (Teal E-Line): Station ⇄ Fatehsagar Lake",
+                "code": "UDR-L1", "city": "Udaipur", "state": "Rajasthan",
+                "description": "Lakeside corridor linking Udaipur City Railway Station, City Palace, and Fatehsagar Lake.",
+                "color": "#0d9488",
+                "stops": ["Udaipur City Railway Station", "City Palace Gate", "Fatehsagar Lake Circle"]
+            },
+        ]
+
+        other_routes_map: dict[str, Route] = {}
+        for r_info in other_routes_data:
+            existing = await db.execute(select(Route).where(Route.code == r_info["code"]))
+            route_obj = existing.scalar_one_or_none()
+            if not route_obj:
+                route_obj = Route(
+                    name=r_info["name"],
+                    code=r_info["code"],
+                    city=r_info["city"],
+                    state=r_info["state"],
+                    description=r_info["description"],
+                    color=r_info["color"]
+                )
+                db.add(route_obj)
+                await db.flush()
+            other_routes_map[r_info["code"]] = route_obj
+
+            for seq, stop_name in enumerate(r_info["stops"]):
+                stop_obj = stops_map.get(stop_name)
+                if stop_obj:
+                    existing_rs = await db.execute(
+                        select(RouteStop).where(RouteStop.route_id == route_obj.id, RouteStop.stop_id == stop_obj.id)
+                    )
+                    if not existing_rs.scalar_one_or_none():
+                        db.add(RouteStop(
+                            route_id=route_obj.id,
+                            stop_id=stop_obj.id,
+                            sequence=seq + 1,
+                            distance_from_start_km=round((seq + 1) * 2.2, 1)
+                        ))
+        await db.commit()
+        print(f"[+] Seeded {len(other_routes_data)} Jodhpur/Jaipur/Udaipur Routes and Stop Associations.")
 
         # 5. Seed Public Transit Department & Electric Buses
         from app.models.department import Department
@@ -475,6 +677,15 @@ async def seed():
         # is never rejected as an "unknown vehicle").
         from simulator.config import VEHICLES as SIM_VEHICLES
         from simulator.routes import ROUTES as SIM_ROUTES
+
+        # Maps each electric-bus vehicle_code to the real transit route it runs.
+        SIM_BUS_ROUTE_CODE = {
+            "bus-007": "JAI-L1", "bus-008": "JAI-L2",
+            "bus-009": "JAI-L1", "bus-010": "JAI-L2",
+            "bus-011": "JDH-L1", "bus-012": "JDH-L2",
+            "bus-013": "UDR-L1", "bus-014": "UDR-L1",
+            "bus-015": "BKN-L2",
+        }
 
         DEPARTMENT_META = {
             "Bikaner Transport": {
@@ -613,6 +824,21 @@ async def seed():
                     connectivity_status="online",
                 )
                 db.add(t_obj)
+
+            # Link electric buses to a real transit route for their city so the
+            # public site never shows "Route unassigned" (fire/utility vehicles
+            # don't run fixed routes, so they're intentionally left unlinked).
+            route_code = SIM_BUS_ROUTE_CODE.get(cfg.vehicle_code)
+            if route_code:
+                r_obj = other_routes_map.get(route_code) or bikaner_routes_map.get(route_code)
+                if r_obj:
+                    vr_res = await db.execute(select(VehicleRoute).where(VehicleRoute.vehicle_id == v_obj.id))
+                    vr_obj = vr_res.scalar_one_or_none()
+                    if not vr_obj:
+                        db.add(VehicleRoute(vehicle_id=v_obj.id, route_id=r_obj.id, is_active=True, direction="Inbound"))
+                    elif not vr_obj.is_active or vr_obj.route_id != r_obj.id:
+                        vr_obj.route_id = r_obj.id
+                        vr_obj.is_active = True
 
         await db.commit()
         print(f"[+] Seeded {len(SIM_VEHICLES)} simulator fleet vehicles across {len(DEPARTMENT_META)} Rajasthan departments.")

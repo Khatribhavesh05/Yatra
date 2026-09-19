@@ -4,6 +4,7 @@ import { getDepartments, createDepartment } from '../api/departments';
 import { getVehicles } from '../api/vehicles';
 import { QUERY_KEYS } from '../utils/constants';
 import { Link } from 'react-router-dom';
+import { getVehicleStatus } from '../utils/formatters';
 import PageHeader from '../components/common/PageHeader';
 import StatusBadge from '../components/common/StatusBadge';
 import { EmptyState, ErrorState } from '../components/common/FeedbackStates';
@@ -40,8 +41,8 @@ export default function Departments() {
 
   const getDeptFleetStats = (deptId: string) => {
     const deptVehicles = vehicles.filter((v) => v.department_id === deptId);
-    const active = deptVehicles.filter((v) => (v.speed_kph && v.speed_kph > 0) || (v.connectivity_status === 'online' && !v.charging)).length;
-    const charging = deptVehicles.filter((v) => v.charging).length;
+    const active = deptVehicles.filter((v) => getVehicleStatus(v) === 'active').length;
+    const charging = deptVehicles.filter((v) => getVehicleStatus(v) === 'charging').length;
     return { total: deptVehicles.length, active, charging };
   };
 

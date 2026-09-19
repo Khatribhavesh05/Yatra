@@ -105,7 +105,7 @@ async def get_public_vehicles(
     if route_id:
         query = query.where(VehicleRoute.route_id == route_id)
     if city:
-        query = query.where(or_(Route.city == city, Route.city.is_(None)))
+        query = query.where(Route.city == city)
     if search:
         search_pat = f"%{search}%"
         query = query.where(or_(

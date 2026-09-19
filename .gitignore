@@ -93,3 +93,4 @@ app.*.map.json
 # Test Artifacts & Temp Files
 test_dark.gif
 test_light.gif
+.gstack/

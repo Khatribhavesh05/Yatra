@@ -33,7 +33,7 @@ export default function VehicleDetail() {
 
   const { data: alertsData } = useQuery({
     queryKey: [QUERY_KEYS.ALERTS, 'vehicle', id],
-    queryFn: () => getAlerts('all', 100, 0),
+    queryFn: () => getAlerts('all', 500, 0),
     enabled: !!id && activeTab === 'alerts',
   });
 

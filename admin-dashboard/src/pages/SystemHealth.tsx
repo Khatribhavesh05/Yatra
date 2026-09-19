@@ -8,14 +8,16 @@ import StatusBadge from '../components/common/StatusBadge';
 import { DetailPanel, InfoRow } from '../components/common/DetailComponents';
 
 export default function SystemHealth() {
-  const { data: health, isLoading, isFetching, refetch } = useQuery({
+  const { data: health, isLoading, isFetching, isError, refetch } = useQuery({
     queryKey: [QUERY_KEYS.HEALTH],
     queryFn: getHealth,
     refetchInterval: 30000,
+    retry: false,
   });
 
   const { connectionState } = useWebSocket();
   const isConnected = connectionState === 'connected';
+  const isApiHealthy = !isError && health?.status === 'ok';
 
   return (
     <div className="space-y-6">
@@ -46,7 +48,10 @@ export default function SystemHealth() {
               isLoading ? (
                 'Checking...'
               ) : (
-                <StatusBadge status={health?.status === 'ok' ? 'healthy' : 'down'} label={health?.status?.toUpperCase() || 'HEALTHY'} />
+                <StatusBadge
+                  status={isApiHealthy ? 'healthy' : 'down'}
+                  label={isApiHealthy ? (health?.status?.toUpperCase() || 'HEALTHY') : 'UNREACHABLE'}
+                />
               )
             }
           />
@@ -71,7 +76,15 @@ export default function SystemHealth() {
 
         {/* Database */}
         <DetailPanel title="Primary PostgreSQL Database" icon="database">
-          <InfoRow label="Database State" value={<StatusBadge status="healthy" label="HEALTHY / REACHABLE" />} />
+          <InfoRow
+            label="Database State"
+            value={
+              <StatusBadge
+                status={isApiHealthy ? 'healthy' : 'warning'}
+                label={isApiHealthy ? 'REACHABLE VIA API' : 'STATUS UNKNOWN'}
+              />
+            }
+          />
           <InfoRow label="Persistence Layer" value="PostgreSQL + Supabase Platform" border={false} />
         </DetailPanel>
 

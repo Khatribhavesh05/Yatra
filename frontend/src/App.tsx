@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { CityProvider } from './context/CityContext';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/layout/Layout';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 // Public Citizen & Commuter Pages
 import { HomePage } from './pages/HomePage';
@@ -30,30 +31,32 @@ export const App: React.FC = () => {
       <AuthProvider>
         <CityProvider>
           <Layout>
-            <Routes>
-              {/* Public Platform Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/bus" element={<WhereIsMyBusPage />} />
-              <Route path="/routes/:id" element={<RouteDetailPage />} />
-              <Route path="/stops/:id" element={<StopDetailPage />} />
-              <Route path="/charging" element={<ChargingStationsPage />} />
-              <Route path="/charging/:id" element={<ChargingDetailPage />} />
-              <Route path="/city" element={<CityPortalPage />} />
-              <Route path="/help" element={<HelpEmergencyPage />} />
-              <Route path="/network" element={<NetworkPage />} />
-              <Route path="/vehicles" element={<VehiclesPage />} />
-              <Route path="/resources" element={<ResourcesPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/simulation" element={<SimulationPage />} />
+            <ErrorBoundary>
+              <Routes>
+                {/* Public Platform Routes */}
+                <Route path="/" element={<HomePage />} />
+                <Route path="/services" element={<ServicesPage />} />
+                <Route path="/bus" element={<WhereIsMyBusPage />} />
+                <Route path="/routes/:id" element={<RouteDetailPage />} />
+                <Route path="/stops/:id" element={<StopDetailPage />} />
+                <Route path="/charging" element={<ChargingStationsPage />} />
+                <Route path="/charging/:id" element={<ChargingDetailPage />} />
+                <Route path="/city" element={<CityPortalPage />} />
+                <Route path="/help" element={<HelpEmergencyPage />} />
+                <Route path="/network" element={<NetworkPage />} />
+                <Route path="/vehicles" element={<VehiclesPage />} />
+                <Route path="/resources" element={<ResourcesPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/simulation" element={<SimulationPage />} />
 
-              {/* Operator Portal */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/charging/operator" element={<OperatorDashboardPage />} />
+                {/* Operator Portal */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/charging/operator" element={<OperatorDashboardPage />} />
 
-              {/* Fallback */}
-              <Route path="*" element={<HomePage />} />
-            </Routes>
+                {/* Fallback */}
+                <Route path="*" element={<HomePage />} />
+              </Routes>
+            </ErrorBoundary>
           </Layout>
         </CityProvider>
       </AuthProvider>

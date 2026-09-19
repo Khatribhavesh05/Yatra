@@ -93,23 +93,35 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    const map = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: getStyleSpec(tileStyle),
-      center,
-      zoom,
-      minZoom,
-      maxZoom,
-      attributionControl: false,
-    });
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: getStyleSpec(tileStyle),
+        center,
+        zoom,
+        minZoom,
+        maxZoom,
+        attributionControl: false,
+      });
+    } catch (err) {
+      console.error('Failed to initialize map:', err);
+      setMapError(true);
+      return;
+    }
 
     // Add navigation controls (zoom in/out, compass)
     map.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
     map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+
+    map.on('error', (e) => {
+      console.error('Map error:', e?.error);
+    });
 
     map.on('load', () => {
       mapInstanceRef.current = map;
@@ -133,27 +145,38 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    if (mapError || !mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
-    
+
     const handleStyleLoad = () => {
       map.resize();
     };
-    
+
     map.setStyle(getStyleSpec(tileStyle));
     map.once('style.load', handleStyleLoad);
   }, [tileStyle]);
 
   // Update center when center prop changes significantly
   useEffect(() => {
-    if (mapInstanceRef.current && center) {
-      mapInstanceRef.current.flyTo({
-        center,
-        zoom: zoom || mapInstanceRef.current.getZoom(),
-        essential: true,
-      });
-    }
+    if (mapError || !mapInstanceRef.current || !center) return;
+    mapInstanceRef.current.flyTo({
+      center,
+      zoom: zoom || mapInstanceRef.current.getZoom(),
+      essential: true,
+    });
   }, [center[0], center[1], zoom]);
+
+  if (mapError) {
+    return (
+      <div className={`relative overflow-hidden flex flex-col items-center justify-center gap-2 bg-surface-low text-center p-8 ${className}`}>
+        <span className="material-symbols-outlined text-4xl text-outline">map</span>
+        <p className="text-sm font-semibold text-on-surface">Map unavailable in this browser</p>
+        <p className="text-xs text-on-surface-variant max-w-xs">
+          Live map rendering requires WebGL support. Please try a different browser or device.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`relative overflow-hidden ${className}`}>
